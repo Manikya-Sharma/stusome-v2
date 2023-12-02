@@ -2,14 +2,16 @@ import Decoration from "@/components/miscelleneous/Decoration";
 
 export default function Home() {
   return (
-    <main className="relative min-h-screen w-[100vw] overflow-x-hidden pr-5">
+    <main className="relative min-h-screen w-[100vw] max-w-full overflow-x-hidden">
       <Decoration />
       <div className="pl-3">
         <div>
           {/* Hero */}
           <h1 className="mb-3 pt-7 text-6xl font-semibold tracking-tighter sm:text-center">
             Social Media{" "}
-            <span className="block text-blue-600 sm:inline">made better</span>
+            <span className="block text-blue-600 dark:text-blue-500 sm:inline">
+              made better
+            </span>
           </h1>
           <p className="max-w-xs pl-1 text-muted-foreground sm:mx-auto sm:max-w-prose sm:pl-0 sm:text-center">
             A social media, made by the students, made for the students
@@ -19,12 +21,16 @@ export default function Home() {
         {/* Vision */}
         <div className="mt-24">
           <h2 className="text-5xl">Our Vision</h2>
-          <p className="mt-3 pl-1 text-lg font-light text-black/80">
+          <p className="mt-3 pl-1 pr-5 text-lg font-light text-black/80 dark:text-white/80">
             Stusome is an effort to{" "}
-            <span className="text-blue-600">reduce the negative impacts</span>{" "}
+            <span className="text-blue-600 dark:text-blue-400">
+              reduce the negative impacts
+            </span>{" "}
             of social media while retaining its original character. We want the
             future generation to create a{" "}
-            <span className="text-blue-600">supportive online community</span>{" "}
+            <span className="text-blue-600 dark:text-blue-400">
+              supportive online community
+            </span>{" "}
             while avoiding distractions offered by the existing social media
             platforms.
           </p>
@@ -32,11 +38,11 @@ export default function Home() {
       </div>
       {/* Features */}
       <div>
-        <div className="mt-20 bg-blue-950 px-6 py-12 text-white/90 opacity-40">
+        <div className="mt-20 bg-blue-950 px-6 py-12 text-white/90 opacity-40 dark:bg-blue-800 dark:opacity-60">
           <h2 className="text-5xl">Features</h2>
         </div>
-        <div>
-          <ul className="text-black/75">
+        <div className="pr-5">
+          <ul className="text-black/75 dark:text-white/75">
             <li className="my-5">
               <h3 className="mb-2 mt-3 pl-3 text-4xl tracking-wide">Posts</h3>
               <p className="ml-3 max-w-prose leading-relaxed">
@@ -74,7 +80,7 @@ export default function Home() {
           </ul>
         </div>
       </div>
-      <div className="relative h-56 bg-gradient-to-b from-white to-blue-500">
+      <div className="relative h-56 bg-gradient-to-b from-white to-blue-500 dark:from-black dark:to-blue-600">
         <p className="absolute inset-x-0 bottom-10 text-center text-white/90">
           2023, All rights reserved
         </p>

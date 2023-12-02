@@ -1,19 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Image from "next/image";
 
 const Page = () => {
   return (
     <div className="flex h-[80vh] items-center justify-center overflow-hidden">
       <main>
-        <div className="mb-3 text-3xl sm:text-5xl">
-          <h1 className="text-center">Login to stusome</h1>
+        <div className="mx-auto mb-3 h-fit w-fit rounded-lg px-2 py-1 dark:bg-[rgba(225,225,225,0.5)]">
+          <div className="relative mx-auto h-16 w-60">
+            <Image src="/logo-full.svg" alt="logo" fill priority={true} />
+          </div>
         </div>
+
         <p className="mb-10 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account? sign up!
+          Login to your account
         </p>
 
-        <form className="border-px md:w-xl mx-auto mb-4 min-w-fit max-w-md rounded border border-black/10 bg-white px-10 pb-8 pt-6 md:px-12 md:py-8">
+        <form className="border-px md:w-xl mx-auto mb-4 min-w-fit max-w-md rounded border border-black/10 bg-white px-10 pb-8 pt-6 dark:border-white/10 dark:bg-black md:px-12 md:py-8">
           <div className="mb-4">
             <Label
               className="mb-2 block text-sm font-semibold text-gray-500"
@@ -38,7 +42,7 @@ const Page = () => {
             </Button>
             <Button
               variant={"link"}
-              className="align-baseline text-blue-500 hover:text-blue-800"
+              className="align-baseline text-blue-500 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
             >
               Forgot Password?
             </Button>
