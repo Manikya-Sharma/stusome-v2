@@ -12,7 +12,7 @@ const Page = () => {
     router.replace("/login");
   }
 
-  return <div>Hello {session?.user?.name}</div>;
+  return <div></div>;
 };
 
 export default Page;

@@ -1,4 +1,4 @@
-import SessionRedirectDashboard from "@/components/auth/SessionRedirectDashboard";
+import SessionRedirect from "@/components/auth/SessionRedirect";
 import Tile from "@/components/auth/Tile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import Image from "next/image";
 
 const Page = () => {
   return (
-    <SessionRedirectDashboard>
+    <SessionRedirect when="authenticated" to="/explore">
       <div className="flex h-[80vh] items-center justify-center overflow-hidden">
         <main>
           <div className="mx-auto mb-3 h-fit w-fit rounded-lg px-2 py-1 dark:bg-[rgba(225,225,225,0.5)]">
@@ -64,7 +64,7 @@ const Page = () => {
           </div>
         </main>
       </div>
-    </SessionRedirectDashboard>
+    </SessionRedirect>
   );
 };
 

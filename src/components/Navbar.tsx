@@ -10,6 +10,12 @@ import { Around } from "@theme-toggles/react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { signOut, useSession } from "next-auth/react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 export default function Navbar() {
   const [mounted, setMounted] = useState<boolean>(false);
@@ -45,29 +51,47 @@ export default function Navbar() {
             <LogIn className="h-4 w-4 sm:ml-2" />
           </Button>
         )}
+        <TooltipProvider>
+          {status === "authenticated" && (
+            /* On medium screen, log-out is at sidebar */
 
-        {status === "authenticated" && (
-          <Button className="text-sm" onClick={() => signOut()}>
-            <LogOut className="h-4 w-4" />
-          </Button>
-        )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  className="text-sm md:scale-0"
+                  onClick={() => signOut()}
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Logout</TooltipContent>
+            </Tooltip>
+          )}
 
-        {mounted && (
-          <div
-            className={cn(
-              "flex h-10 w-8 items-center justify-center px-2",
-              "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-              "whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-            )}
-          >
-            <Around
-              duration={750}
-              toggled={theme === "dark"}
-              toggle={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="h-10 w-8"
-            />
-          </div>
-        )}
+          {mounted && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className={cn(
+                    "flex h-10 w-8 items-center justify-center px-2",
+                    "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+                    "whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                  )}
+                >
+                  <Around
+                    duration={750}
+                    toggled={theme === "dark"}
+                    toggle={() => setTheme(theme === "dark" ? "light" : "dark")}
+                    className="h-10 w-8"
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                Switch to {theme === "dark" ? "light" : "dark"} mode
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </TooltipProvider>
       </div>
     </nav>
   );

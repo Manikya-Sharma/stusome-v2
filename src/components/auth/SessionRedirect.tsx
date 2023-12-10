@@ -2,19 +2,27 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { PropsWithChildren } from "react";
+import { ReactNode } from "react";
 import PageLoading from "../miscelleneous/PageLoading";
 
-const SessionRedirectDashboard = ({
+interface SessionRedirectProps {
+  children: ReactNode;
+  when: "authenticated" | "unauthenticated";
+  to: string;
+}
+
+const SessionRedirect = ({
   children,
+  when,
+  to,
   ...props
-}: PropsWithChildren) => {
+}: SessionRedirectProps) => {
   const router = useRouter();
 
   const { status } = useSession();
 
-  if (status === "authenticated") {
-    router.replace("/dashboard");
+  if (status === when) {
+    router.replace(to);
   }
 
   return (
@@ -26,4 +34,4 @@ const SessionRedirectDashboard = ({
   );
 };
 
-export default SessionRedirectDashboard;
+export default SessionRedirect;

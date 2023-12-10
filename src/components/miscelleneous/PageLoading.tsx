@@ -29,7 +29,7 @@ const PageLoading = ({ toName }: PageLoadingProps) => {
       <div className="mt-5">
         {toName ? `Next Stop - ${toName}` : "Gear-up, we are ready to launch!"}
       </div>
-      <Progress value={value} className="mt-10 h-1 max-w-prose" />
+      <Progress value={value} className="mt-10 h-1 w-[80%] max-w-prose" />
     </div>
   );
 };
