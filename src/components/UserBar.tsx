@@ -14,19 +14,39 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 
 const UserBar = () => {
   const [hover, setHover] = useState<boolean>(false);
+  const [hide, setHide] = useState<boolean>(false); // hide on mobile screens
+  const [scroll, setScroll] = useState<number>(0);
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPos = window.scrollY;
+      if (scroll > scrollPos) {
+        setHide(true);
+      } else {
+        setHide(false);
+      }
+      setScroll(scrollPos);
+    };
+    window.onscroll = handleScroll;
+  }, [scroll]);
   const router = useRouter();
   const path = usePathname();
   return (
     <TooltipProvider>
       <nav
-        className="absolute bottom-3 left-1/2 flex w-fit -translate-x-1/2 items-center justify-center gap-3 rounded-xl bg-gray-300 px-2 py-2 dark:bg-gray-700 md:inset-y-0 md:left-0 md:translate-x-0 md:flex-col md:justify-start md:bg-[rgba(175,175,175,0.3)] md:px-2 md:pt-16 md:backdrop-blur-sm md:dark:bg-[rgba(50,50,50,0.3)]"
+        className={cn(
+          "fixed left-1/2 z-10 flex w-fit -translate-x-1/2 items-center justify-center gap-3 rounded-xl bg-gray-300 px-2 py-2 transition-all dark:bg-gray-700 md:inset-y-0 md:left-0 md:mt-16 md:translate-x-0 md:flex-col md:justify-start md:bg-[rgba(175,175,175,0.3)] md:px-2 md:pt-5 md:backdrop-blur-sm md:dark:bg-[rgba(50,50,50,0.3)]",
+          {
+            "bottom-3": hide,
+            "-bottom-14": !hide,
+          },
+        )}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
       >

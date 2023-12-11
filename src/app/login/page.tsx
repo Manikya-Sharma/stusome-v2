@@ -7,7 +7,11 @@ import Image from "next/image";
 
 const Page = () => {
   return (
-    <SessionRedirect when="authenticated" to="/explore">
+    <SessionRedirect
+      when="authenticated"
+      to="/explore"
+      notwhen="unauthenticated"
+    >
       <div className="flex h-[80vh] items-center justify-center overflow-hidden">
         <main>
           <div className="mx-auto mb-3 h-fit w-fit rounded-lg px-2 py-1 dark:bg-[rgba(225,225,225,0.5)]">

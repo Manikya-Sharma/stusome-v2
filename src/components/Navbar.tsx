@@ -21,7 +21,7 @@ export default function Navbar() {
   const [mounted, setMounted] = useState<boolean>(false);
   const { theme, setTheme } = useTheme();
 
-  const { data: session, status } = useSession();
+  const { status } = useSession();
 
   useEffect(() => {
     setMounted(true);
@@ -35,9 +35,16 @@ export default function Navbar() {
     <nav className="fixed inset-x-0 z-10 flex items-center justify-between bg-[rgba(239,246,255,0.7)] px-3 py-2 backdrop-blur-sm dark:bg-[rgba(29,36,45,0.7)]">
       <Link
         href={"/"}
-        className="rounded-lg px-2 py-px dark:bg-[rgba(255,255,255,0.5)]"
+        className={cn("rounded-lg dark:bg-[rgba(255,255,255,0.5)]", {
+          "px-2 py-px": status !== "authenticated",
+        })}
       >
-        <div className="relative h-10 w-28">
+        <div
+          className={cn(
+            "relative h-10 w-28",
+            status === "authenticated" && "hidden",
+          )}
+        >
           <Image src={"/logo-full.svg"} alt="stusome" fill />
         </div>
       </Link>
@@ -52,22 +59,6 @@ export default function Navbar() {
           </Button>
         )}
         <TooltipProvider>
-          {status === "authenticated" && (
-            /* On medium screen, log-out is at sidebar */
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  className="text-sm md:scale-0"
-                  onClick={() => signOut()}
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Logout</TooltipContent>
-            </Tooltip>
-          )}
-
           {mounted && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -83,6 +74,7 @@ export default function Navbar() {
                     toggled={theme === "dark"}
                     toggle={() => setTheme(theme === "dark" ? "light" : "dark")}
                     className="h-10 w-8"
+                    title=""
                   />
                 </div>
               </TooltipTrigger>

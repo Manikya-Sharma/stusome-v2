@@ -8,6 +8,7 @@ import PageLoading from "../miscelleneous/PageLoading";
 interface SessionRedirectProps {
   children: ReactNode;
   when: "authenticated" | "unauthenticated";
+  notwhen?: "authenticated" | "unauthenticated";
   to: string;
 }
 
@@ -15,6 +16,7 @@ const SessionRedirect = ({
   children,
   when,
   to,
+  notwhen,
   ...props
 }: SessionRedirectProps) => {
   const router = useRouter();
@@ -27,7 +29,7 @@ const SessionRedirect = ({
 
   return (
     <div {...props}>
-      {(status === "loading" || status === "authenticated") && <PageLoading />}
+      {status !== when && status != notwhen && <PageLoading />}
 
       {children}
     </div>
