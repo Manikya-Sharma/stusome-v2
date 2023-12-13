@@ -38,18 +38,22 @@ const Page = () => {
       }
       const map: Map<string, string> = new Map();
       for (const post of posts.filter((post) => post.published)) {
+        if (map.has(post.author)) continue;
         const rawAuthor = await fetch(`/api/accounts?email=${post.author}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
           },
+          cache: "force-cache",
         });
         const author = (await rawAuthor.json()) as Account;
 
-        map.set(post.author, author.name);
+        setAuthors((authors) => {
+          const new_authors = new Map(authors);
+          new_authors?.set(post.author, author.name);
+          return new_authors;
+        });
       }
-
-      setAuthors(map);
     }
     getAuthors(posts);
   }, [posts]);

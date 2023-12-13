@@ -6,7 +6,7 @@ import Discussions from "@/components/Posts/Discussions";
 import ShowMarkdown from "@/components/ShowMarkdown";
 
 import { useState, useEffect } from "react";
-import { Turn as Hamburger } from "hamburger-react";
+import { Cross as Hamburger } from "hamburger-react";
 
 import { v4 as uuid } from "uuid";
 
@@ -238,69 +238,22 @@ export default function Page({ params }: Params) {
     <Skeleton />
   ) : (
     <div className="dark:bg-slate-900 dark:text-slate-100">
-      <div className="font-fancy scroll-smooth p-4 transition-colors duration-200">
-        <nav className="fixed left-0 top-0 z-[100] flex h-fit max-h-[50px] w-[100vw] items-center justify-start overflow-hidden bg-[rgba(50,50,50,0.1)] backdrop-blur-md md:hidden">
+      <div className="scroll-smooth p-4 transition-colors duration-200">
+        <nav className="fixed left-0 top-0 z-[100] flex h-fit max-h-[50px] w-fit items-center justify-start md:hidden">
           <div className="py-1 pl-3">
             <Hamburger
               toggled={openMenu}
               onToggle={() => setOpenMenu(!openMenu)}
-              size={20}
+              size={18}
             />
           </div>
         </nav>
 
-        {session && session.user && session.user.email ? (
-          validUser(session.user.email) ? (
-            <div className="fixed right-20 top-1 z-[150] w-fit cursor-pointer rounded-3xl bg-slate-100 px-3 py-2 transition-all duration-200 hover:bg-slate-400 hover:text-slate-100 dark:bg-slate-400 dark:hover:bg-slate-100 dark:hover:text-slate-800 sm:absolute">
-              <Link
-                href={`/posts/${post?.id}/edit`}
-                className="flex w-fit items-center justify-center gap-2"
-              >
-                <p>Edit</p>
-              </Link>
-            </div>
-          ) : (
-            <div className="fixed right-20 top-1 z-[150] w-fit cursor-pointer rounded-3xl bg-slate-100 px-3 py-2 transition-all duration-200 hover:bg-slate-400 hover:text-slate-100 dark:bg-slate-400 dark:hover:bg-slate-100 dark:hover:text-slate-800 sm:absolute">
-              <button
-                onClick={() => {
-                  /* toast.promise(handleChat(), {
-                    loading: "Please wait while we redirect",
-                    error: "Could not start chat, please try again later",
-                    success: "redirecting...",
-                  }); */
-                }}
-                className="flex w-fit items-center justify-center gap-2"
-              >
-                <p>Chat</p>
-              </button>
-            </div>
-          )
-        ) : (
-          <div className="fixed right-20 top-1 z-[150] w-fit cursor-pointer rounded-3xl bg-slate-100 px-3 py-2 transition-all duration-200 hover:bg-slate-400 dark:bg-slate-400 dark:hover:bg-slate-100 sm:absolute">
-            <Link href="/login">{/* <LuLogIn /> */}</Link>
-          </div>
-        )}
-
-        <div
-          className="fixed right-2 top-1 z-[200] w-fit cursor-pointer rounded-3xl bg-slate-100 px-3 py-2 dark:bg-slate-400 sm:absolute"
-          onClick={(e) => {
-            e.stopPropagation();
-            // handleTheme(theme == "dark" ? "light" : "dark");
-          }}
-        >
-          <div>
-            {/* <DarkModeSwitch
-              checked={theme == "dark"}
-              onChange={() => handleTheme(theme == "dark" ? "light" : "dark")}
-              size={25} */}
-            {/* /> */}
-          </div>
-        </div>
         {/* Title */}
         <div className="relative mb-5 mt-10 dark:z-10 md:mt-0">
           <h1 className="text-center text-5xl">{post?.title}</h1>
           {!loading && (
-            <cite className="mt-3 block text-center text-lg text-slate-400">
+            <cite className="mt-3 block text-center text-lg text-muted-foreground">
               - {author && author.name}
             </cite>
           )}

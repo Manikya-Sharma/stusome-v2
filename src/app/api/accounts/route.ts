@@ -23,7 +23,6 @@ export async function GET(req: NextRequest) {
   const client = new MongoClient(process.env.MONGODB_URI!);
 
   const email = req.nextUrl.searchParams.get("email");
-  console.log(email);
   try {
     await client.connect();
     const database = client.db("stusome");

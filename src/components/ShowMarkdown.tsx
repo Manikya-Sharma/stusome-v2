@@ -13,7 +13,7 @@ type Props = {
 export default function ShowMarkdown(props: Props) {
   let currentId = 0;
   const generateId = () => {
-    currentId += 1;
+    currentId += 0.5;
     return currentId;
   };
   return (
