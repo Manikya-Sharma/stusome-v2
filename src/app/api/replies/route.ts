@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     const database = client.db("stusome");
     const collection = database.collection("replies");
 
-    const post = await collection.findOne(id);
+    const post = await collection.findOne({ id });
     return NextResponse.json(post);
   } catch (e) {
     throw new Error(`Error in fetching post: ${e}`);
