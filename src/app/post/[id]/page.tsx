@@ -1,8 +1,6 @@
 "use client";
 
 import Image from "next/image";
-
-import Discussions from "@/components/Posts/Discussions";
 import ShowMarkdown from "@/components/ShowMarkdown";
 
 import { useState, useEffect } from "react";
@@ -12,12 +10,12 @@ import { v4 as uuid } from "uuid";
 
 import { useSession } from "next-auth/react";
 import { notFound, useRouter } from "next/navigation";
-import { LogIn } from "lucide-react";
+import { LogIn, Reply as LuReply } from "lucide-react";
 import Headings from "@/components/Posts/Headings";
 import { Account } from "@/types/user";
 import { Discussion, Post, Reply } from "@/types/post";
 import { Skeleton } from "@/components/ui/skeleton";
-import Link from "next/link";
+import Answer from "@/components/Doubts/Answer";
 
 type Params = {
   params: { id: string };
@@ -29,7 +27,12 @@ export default function Page({ params }: Params) {
 
   // fetching data
   const id = params.id;
+  const [accounts, setAccounts] = useState<Map<string, Account>>();
   const [post, setPost] = useState<Post | null>(null);
+  const [discussions, setDiscussions] = useState<Array<Discussion> | null>(
+    null,
+  );
+  const [replies, setReplies] = useState<Array<Reply> | null>(null);
   const loading = post === null;
   const [headings, setHeadings] = useState<string[]>([]);
   const [author, setAuthor] = useState<Account | null>(null);
@@ -53,18 +56,82 @@ export default function Page({ params }: Params) {
         } */
         setPost(post);
 
-        // get author info
-        const rawAuthorInfo = await fetch(
-          `/api/accounts/?email=${post.author}`,
-        );
-        const authorInfo = (await rawAuthorInfo.json()) as Account;
-        setAuthor(authorInfo);
+        // get discussions
+
+        const discussionIds = post.discussions;
+        const discussionRequests = discussionIds.map((request) => {
+          return fetch(`/api/discussions?id=${request}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+        });
+
+        const rawDiscussions = await Promise.all(discussionRequests);
+        const parsedDiscussions = (await Promise.all(
+          rawDiscussions.map((ans) => ans.json()),
+        )) as Array<Discussion>;
+        setDiscussions(parsedDiscussions);
+
+        // get replies
+        const replyIds = parsedDiscussions.flatMap((disc) => disc.replies);
+        const replyRequests = replyIds.map((request) => {
+          return fetch(`/api/replies?id=${request}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+        });
+
+        const rawReplies = await Promise.all(replyRequests);
+        const parsedReplies = (await Promise.all(
+          rawReplies.map((ans) => ans.json()),
+        )) as Array<Reply>;
+        setReplies(parsedReplies);
       } catch (e) {
         console.log(`Error: ${e}`);
       }
     }
     getData();
   }, [id, router]);
+
+  useEffect(() => {
+    async function fetchAuthorData() {
+      const authors: Map<string, Account> = new Map();
+      if (!post || !replies || !discussions) {
+        return;
+      }
+
+      const emails: Array<string> = [
+        ...discussions.map((discussion) => discussion.author),
+        ...replies.map((reply) => reply.author),
+        post.author,
+      ];
+
+      const promises = emails.map((email) =>
+        fetch(`/api/accounts?email=${email}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }),
+      );
+
+      const rawResponses = await Promise.all(promises);
+      const responses = await Promise.all(
+        rawResponses.map((response) => response.json()),
+      );
+
+      responses.map((value, index) => {
+        authors.set(emails[index], value);
+      });
+      setAccounts(authors);
+    }
+    // get authors
+    fetchAuthorData();
+  }, [id, discussions, post, replies]);
 
   // finding headings from data
   useEffect(() => {
@@ -237,7 +304,7 @@ export default function Page({ params }: Params) {
   return loading ? (
     <Skeleton />
   ) : (
-    <div className="dark:bg-slate-900 dark:text-slate-100">
+    <div className="min-h-screen">
       <div className="scroll-smooth p-4 transition-colors duration-200">
         <nav className="fixed left-0 top-0 z-[100] flex h-fit max-h-[50px] w-fit items-center justify-start md:hidden">
           <div className="py-1 pl-3">
@@ -296,6 +363,42 @@ export default function Page({ params }: Params) {
         <div>
           <div className="mx-auto my-5 h-[2px] w-[90%] bg-slate-600"></div>
           <h2 className="mb-3 mt-6 text-4xl sm:text-center">Discussions:-</h2>
+          {post &&
+            accounts &&
+            discussions &&
+            replies &&
+            discussions.map((discussion) => {
+              return (
+                <>
+                  <Answer
+                    key={discussion.id}
+                    author={accounts.get(discussion.author)}
+                    content={discussion.content}
+                    replies={replies.filter((reply) =>
+                      discussion.replies.includes(reply.id),
+                    )}
+                    authors={accounts}
+                  />
+                  <button
+                    className="text-md ml-auto mr-7 mt-2 flex w-fit gap-2 rounded-xl bg-teal-800 px-3 py-2 text-slate-200 transition hover:bg-teal-600 hover:text-white/80 dark:bg-teal-500 dark:hover:bg-teal-300 dark:hover:text-slate-800"
+                    onClick={(e) => {
+                      const message = prompt("Enter your reply");
+                      if (!message) {
+                        return;
+                      }
+                      // toast.promise(postReply(answer.id, message), {
+                      //   success: "Posted",
+                      //   error: "Could not post your reply",
+                      //   loading: "Posting your reply",
+                      // });
+                    }}
+                  >
+                    <LuReply />
+                    Reply
+                  </button>
+                </>
+              );
+            })}
           {/*
           {postData && (
             <Discussions

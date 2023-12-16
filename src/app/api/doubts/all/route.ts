@@ -10,10 +10,10 @@ export async function GET(req: NextRequest) {
     const database = client.db("stusome");
     const collection = database.collection("doubts");
 
-    const posts = await collection.find({}).toArray();
+    const doubts = await collection.find({}).toArray();
     await client.close();
-    return NextResponse.json(posts);
+    return NextResponse.json(doubts);
   } catch (e) {
-    throw new Error(`Error in fetching post: ${e}`);
+    throw new Error(`Error in fetching doubt: ${e}`);
   }
 }

@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+
 type Props = {
   openMenu: boolean;
   headings: Array<string>;
@@ -11,14 +13,18 @@ export default function Headings(props: Props) {
     return currentId;
   };
 
+  if (props.headings.length <= 1) {
+    return <></>;
+  }
   return (
     <ul
-      className={
-        "fixed left-0 top-[50px] z-[100] h-[100vh] w-[50vw] overflow-y-auto rounded-md bg-slate-800 px-3 py-2 text-slate-400 transition-transform duration-200 md:sticky md:left-2 md:top-10 md:mx-2 md:mr-2 md:inline-flex md:h-fit md:max-h-[70vh] md:w-[15vw] md:flex-col md:justify-start md:bg-[rgba(250,250,250,0.65)] md:p-2 md:text-inherit md:text-slate-600 md:dark:bg-[rgba(50,50,50,0.65)]" +
-        (props.openMenu
-          ? " translate-x-0"
-          : " -translate-x-[80vw] md:translate-x-0")
-      }
+      className={cn(
+        "fixed left-0 top-[50px] z-[100] h-[100vh] w-[50vw] overflow-y-auto rounded-md bg-slate-800 px-3 py-2 text-slate-400 transition-transform duration-200 md:sticky md:left-2 md:top-10 md:mx-2 md:mr-2 md:inline-flex md:h-fit md:max-h-[70vh] md:w-[15vw] md:flex-col md:justify-start md:bg-[rgba(250,250,250,0.65)] md:p-2 md:text-inherit md:text-slate-600 md:dark:bg-[rgba(50,50,50,0.65)]",
+        {
+          " translate-x-0": props.openMenu,
+          " -translate-x-[80vw] md:translate-x-0": !props.openMenu,
+        },
+      )}
     >
       {props.headings.map((h) => {
         return (
