@@ -30,6 +30,8 @@ export async function GET(req: NextRequest) {
     const collection = database.collection("replies");
 
     const post = await collection.findOne({ id });
+
+    await client.close();
     return NextResponse.json(post);
   } catch (e) {
     throw new Error(`Error in fetching reply: ${e}`);

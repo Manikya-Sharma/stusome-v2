@@ -1,21 +1,21 @@
 "use client";
 
-import Image from "next/image";
 import ShowMarkdown from "@/components/ShowMarkdown";
+import Image from "next/image";
 
-import { useState, useEffect } from "react";
 import { Cross as Hamburger } from "hamburger-react";
+import { useEffect, useState } from "react";
 
 import { v4 as uuid } from "uuid";
 
+import Answer from "@/components/Doubts/Answer";
+import GetMarkdownInput from "@/components/GetMarkdownInput";
+import Headings from "@/components/Posts/Headings";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Discussion, Post, Reply } from "@/types/post";
+import { Account } from "@/types/user";
 import { useSession } from "next-auth/react";
 import { notFound, useRouter } from "next/navigation";
-import { LogIn, Reply as LuReply } from "lucide-react";
-import Headings from "@/components/Posts/Headings";
-import { Account } from "@/types/user";
-import { Discussion, Post, Reply } from "@/types/post";
-import { Skeleton } from "@/components/ui/skeleton";
-import Answer from "@/components/Doubts/Answer";
 
 type Params = {
   params: { id: string };
@@ -35,7 +35,7 @@ export default function Page({ params }: Params) {
   const [replies, setReplies] = useState<Array<Reply> | null>(null);
   const loading = post === null;
   const [headings, setHeadings] = useState<string[]>([]);
-  const [author, setAuthor] = useState<Account | null>(null);
+  let author = post && accounts ? accounts.get(post.author) : null;
   useEffect(() => {
     async function getData() {
       try {
@@ -48,12 +48,11 @@ export default function Page({ params }: Params) {
         });
         const post = (await rawPost.json()) as Post;
         if (post == null) {
-          return notFound();
+          notFound();
         }
-        // TODO
-        /* if (post.published == false) {
-          router.replace(`/posts/${id}/edit`);
-        } */
+        if (!post.published) {
+          notFound();
+        }
         setPost(post);
 
         // get discussions
@@ -146,78 +145,103 @@ export default function Page({ params }: Params) {
   }, [post]);
 
   // post new discussion
-  const [takeNewMarkdownInput, setTakeNewMarkdownInput] = useState(false);
-  const [inputValueStatus, setInputValueStatus] = useState<
-    string | { discussion: string; reply: string }
-  >("");
 
-  function handleInput(type: "discussion" | "reply", replyId?: string) {
-    if (type == "discussion") {
-      setTakeNewMarkdownInput(true);
-      setInputValueStatus(id);
-    } else if (type == "reply" && replyId != null) {
-      setTakeNewMarkdownInput(true);
-      setInputValueStatus({ discussion: id, reply: replyId });
+  async function postNewDiscussion(content: string) {
+    if (!session || !session.user || !session.user.email) return;
+    if (!post) return;
+    const new_discussion: Discussion = {
+      author: session.user.email,
+      content,
+      id: uuid(),
+      replies: [],
+    };
+    const new_discussions = discussions
+      ? [...discussions, new_discussion]
+      : [new_discussion];
+
+    setDiscussions(() => new_discussions);
+
+    try {
+      // create new discussion
+      await fetch(`/api/discussions`, {
+        method: "POST",
+        body: JSON.stringify(new_discussion),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      // link this discussion to the post
+
+      await fetch(`/api/posts?id=${post.id}&field=discussions`, {
+        method: "PUT",
+        body: JSON.stringify({
+          discussions: new_discussions.map((disc) => disc.id),
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (e) {
+      console.log(`Error occurred: ${e}`);
     }
   }
 
-  function submitData(inputValue: string) {
-    if (!session || !session.user || !session.user.email) {
-      return;
-    }
-    // new discussion
-    // TODO
-    async function uploadDiscussionData(newDiscussion: Discussion) {
-      await fetch(`/api/posts/newDiscussion/${inputValueStatus}`, {
+  async function postNewReply(content: string, discussionId: string) {
+    if (!session || !session.user || !session.user.email) return;
+    if (!post) return;
+    const reply: Reply = {
+      author: session.user.email,
+      content,
+      id: uuid(),
+    };
+
+    const discussion_replies = replies?.filter(
+      (reply) =>
+        discussions
+          ?.filter((disc) => disc.id == discussionId)[0]
+          .replies.includes(reply.id),
+    );
+    const new_replies = discussion_replies
+      ? [...discussion_replies, reply]
+      : [reply];
+
+    replies && setReplies(() => [...replies, reply]);
+
+    if (!discussions) return;
+    let updated_discussion = discussions.filter(
+      (disc) => disc.id == discussionId,
+    )[0];
+    updated_discussion.replies = new_replies.map((rep) => rep.id);
+    discussions &&
+      setDiscussions([
+        ...discussions.filter((disc) => disc.id != discussionId),
+        updated_discussion,
+      ]);
+
+    try {
+      // create new reply
+      await fetch(`/api/replies`, {
         method: "POST",
+        body: JSON.stringify(reply),
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newDiscussion),
       });
-    }
 
-    // TODO - better form handling needed
-    async function uploadReplyData(newReply: Reply) {
-      if (typeof inputValueStatus == "string") {
-        return;
-      }
-      await fetch(`/api/posts/newReply/${inputValueStatus.reply}`, {
-        method: "POST",
+      // link this reply to the discussion
+
+      await fetch(`/api/discussions?id=${discussionId}&field=replies`, {
+        method: "PUT",
+        body: JSON.stringify({
+          replies: new_replies.map((reply) => reply.id),
+        }),
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newReply),
       });
-    }
-
-    if (typeof inputValueStatus == "string") {
-      const newId = uuid();
-      const newDiscussion: Discussion = {
-        author: session.user.email,
-        content: inputValue,
-        id: newId,
-        replies: [],
-      };
-      // toast.promise(uploadDiscussionData(newDiscussion), {
-      //   loading: "Uploading the discussion",
-      //   success: "Posted",
-      //   error: "Could not post your discussion",
-      // });
-    }
-    // new reply
-    else {
-      const newId = uuid();
-      const newReply: Reply = {
-        author: session.user.email,
-        content: inputValue,
-        id: newId,
-      };
-      // toast.promise(uploadReplyData(newReply), {
-      //   loading: "Uploading the reply",
-      //   success: "Posted",
-      //   error: "Could not post your reply",
-      // });
+    } catch (e) {
+      console.log(`Error occurred: ${e}`);
     }
   }
 
@@ -369,52 +393,41 @@ export default function Page({ params }: Params) {
             replies &&
             discussions.map((discussion) => {
               return (
-                <>
+                <div key={discussion.id}>
                   <Answer
                     key={discussion.id}
                     author={accounts.get(discussion.author)}
                     content={discussion.content}
-                    replies={replies.filter((reply) =>
-                      discussion.replies.includes(reply.id),
-                    )}
+                    replies={
+                      replies &&
+                      replies.filter((reply) =>
+                        discussion.replies.includes(reply.id),
+                      )
+                    }
                     authors={accounts}
                   />
-                  <button
-                    className="text-md ml-auto mr-7 mt-2 flex w-fit gap-2 rounded-xl bg-teal-800 px-3 py-2 text-slate-200 transition hover:bg-teal-600 hover:text-white/80 dark:bg-teal-500 dark:hover:bg-teal-300 dark:hover:text-slate-800"
-                    onClick={(e) => {
-                      const message = prompt("Enter your reply");
-                      if (!message) {
-                        return;
-                      }
-                      // toast.promise(postReply(answer.id, message), {
-                      //   success: "Posted",
-                      //   error: "Could not post your reply",
-                      //   loading: "Posting your reply",
-                      // });
-                    }}
-                  >
-                    <LuReply />
-                    Reply
-                  </button>
-                </>
+                  <div className="text-right lg:mr-10">
+                    <GetMarkdownInput
+                      role="minor"
+                      minorId={discussion.id}
+                      onUpload={postNewReply}
+                      triggerMessage="Reply"
+                      header="Replying to a discussion"
+                      markdown
+                    />
+                  </div>
+                </div>
               );
             })}
-          {/*
-          {postData && (
-            <Discussions
-              discussionIds={postData.discussions}
-              discussionHandler={handleInput}
-            />
-          )}
-
-          {takeNewMarkdownInput ? (
-            <Markdown
-              rows={10}
-              cols={30}
-              uploadMarkdown={submitData}
-              discussionHandler={setTakeNewMarkdownInput}
-            />
-          ) : null} */}
+        </div>
+        <div className="mx-auto w-fit">
+          <GetMarkdownInput
+            role="major"
+            triggerMessage="Post a new discussion"
+            header="Enter your new discussion"
+            markdown
+            onUpload={postNewDiscussion}
+          />
         </div>
       </div>
     </div>

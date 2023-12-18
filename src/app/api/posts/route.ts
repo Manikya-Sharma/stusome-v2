@@ -13,6 +13,8 @@ export async function POST(req: Request) {
 
     await collection.insertOne(new_post);
 
+    await client.close();
+
     return NextResponse.json({});
   } catch (e) {
     throw new Error(`Error in new post: ${e}`);
@@ -40,6 +42,15 @@ export async function PUT(req: NextRequest) {
   const client = new MongoClient(process.env.MONGODB_URI!);
 
   const id = req.nextUrl.searchParams.get("id");
+  const field = req.nextUrl.searchParams.get("field") as
+    | "discussions"
+    | "title"
+    | "author"
+    | "content"
+    | "tags"
+    | "coverImgFull"
+    | "published";
+  if (!field || !id) throw new Error("Missing query parameters");
 
   const new_post = (await req.json()) as Post;
   try {
@@ -47,7 +58,9 @@ export async function PUT(req: NextRequest) {
     const database = client.db("stusome");
     const collection = database.collection("posts");
 
-    await collection.updateOne({ id }, new_post);
+    await collection.updateOne({ id }, { $set: { [field]: new_post[field] } });
+
+    await client.close();
 
     return NextResponse.json({});
   } catch (e) {

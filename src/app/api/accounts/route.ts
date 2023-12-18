@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     const collection = database.collection("accounts");
 
     await collection.insertOne(new_account);
-
+    await client.close();
     return NextResponse.json({});
   } catch (e) {
     throw new Error(`Error in new account: ${e}`);
@@ -39,8 +39,14 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const client = new MongoClient(process.env.MONGODB_URI!);
 
-  const email = req.nextUrl.searchParams.get("email");
-  if (email == null) return;
+  const id = req.nextUrl.searchParams.get("id");
+  const field = req.nextUrl.searchParams.get("field") as
+    | "name"
+    | "image"
+    | "image_third_party"
+    | "posts"
+    | "doubts";
+  if (!field || !id) throw new Error("Missing query parameters");
 
   const new_account = (await req.json()) as Account;
   try {
@@ -48,7 +54,12 @@ export async function PUT(req: NextRequest) {
     const database = client.db("stusome");
     const collection = database.collection("accounts");
 
-    await collection.updateOne({ email: email }, new_account);
+    await collection.updateOne(
+      { id },
+      { $set: { [field]: new_account[field] } },
+    );
+
+    await client.close();
 
     return NextResponse.json({});
   } catch (e) {

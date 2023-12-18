@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import MainQuestion from "@/components/Doubts/MainQuestion";
 import Answer from "@/components/Doubts/Answer";
-import GetAnswer from "@/components/Doubts/GetAnswer";
+import MainQuestion from "@/components/Doubts/MainQuestion";
+import GetMarkdownInput from "@/components/GetMarkdownInput";
 import { Account } from "@/types/user";
-import { Reply } from "lucide-react";
-import { notFound } from "next/navigation";
-import { v4 as uuid } from "uuid";
 import { useSession } from "next-auth/react";
+import { notFound } from "next/navigation";
+import { useEffect, useState } from "react";
+import { v4 as uuid } from "uuid";
 
 export default function Doubt({ params: { id } }: { params: { id: string } }) {
   const { data: session } = useSession();
@@ -18,52 +17,96 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
   const [loading, setLoading] = useState<boolean>(true);
   const [accounts, setAccounts] = useState<Map<string, Account>>();
 
-  async function postReply(id: string, message: string) {
-    if (!session || !session.user || !session.user.email) {
-      return;
-    }
-
-    const newReply: DoubtReply = {
-      id: uuid(),
-      content: message,
+  async function postNewAnswer(content: string) {
+    if (!session || !session.user || !session.user.email) return;
+    if (!data) return;
+    const new_answer: DoubtAnswer = {
       author: session.user.email,
+      content,
+      id: uuid(),
+      replies: [],
     };
+    const new_answers = answers ? [...answers, new_answer] : [new_answer];
 
-    await fetch(`/api/doubts/newReply/${id}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newReply),
-    });
+    setAnswers(() => new_answers);
 
-    if (replies != null) {
-      setReplies([...replies, newReply]);
-    }
-    if (answers != null) {
-      answers.filter((ans) => ans.id == id)[0].replies.push(newReply.id);
+    try {
+      // create new answer
+      await fetch(`/api/answers`, {
+        method: "POST",
+        body: JSON.stringify(new_answer),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      // link this answer to the doubt
+
+      await fetch(`/api/doubts?id=${data.id}&field=answers`, {
+        method: "PUT",
+        body: JSON.stringify({
+          answers: new_answers.map((ans) => ans.id),
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (e) {
+      console.log(`Error occurred: ${e}`);
     }
   }
 
-  async function postAnswer(message: string) {
-    if (!session || !session.user || !session.user.email) {
-      return;
-    }
-    const newAnswer: DoubtAnswer = {
-      id: uuid(),
-      content: message,
+  async function postNewReply(content: string, answerId: string) {
+    if (!session || !session.user || !session.user.email) return;
+    if (!data) return;
+    const reply: DoubtReply = {
       author: session.user.email,
-      replies: [],
+      content,
+      id: uuid(),
     };
-    await fetch(`/api/doubts/newAnswer/${id}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newAnswer),
-    });
-    if (answers != null) {
-      setAnswers([...answers, newAnswer]);
+
+    const answer_replies = replies?.filter(
+      (reply) =>
+        answers
+          ?.filter((ans) => ans.id == answerId)[0]
+          .replies.includes(reply.id),
+    );
+    const new_replies = answer_replies ? [...answer_replies, reply] : [reply];
+
+    replies && setReplies(() => [...replies, reply]);
+
+    if (!answers) return;
+    let updated_answer = answers.filter((ans) => ans.id == answerId)[0];
+    updated_answer.replies = new_replies.map((rep) => rep.id);
+    answers &&
+      setAnswers([
+        ...answers.filter((ans) => ans.id != answerId),
+        updated_answer,
+      ]);
+
+    try {
+      // create new reply
+      await fetch(`/api/doubt_replies`, {
+        method: "POST",
+        body: JSON.stringify(reply),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      // link this reply to the answer
+
+      await fetch(`/api/answers?id=${answerId}&field=replies`, {
+        method: "PUT",
+        body: JSON.stringify({
+          replies: new_replies.map((reply) => reply.id),
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (e) {
+      console.log(`Error occurred: ${e}`);
     }
   }
 
@@ -79,7 +122,7 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
         });
         const doubt = (await rawDoubt.json()) as Doubt;
         if (doubt == null) {
-          return notFound();
+          notFound();
         }
         setData(doubt);
 
@@ -98,10 +141,12 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
         const parsedAnswers = (await Promise.all(
           rawAnswers.map((ans) => ans.json()),
         )) as Array<DoubtAnswer>;
+
         setAnswers(parsedAnswers);
 
         // get reply data
         const replies = parsedAnswers.flatMap((ans) => ans.replies);
+
         const replyRequests = replies.map((request) => {
           return fetch(`/api/doubt_replies?id=${request}`, {
             method: "GET",
@@ -204,45 +249,42 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
               replies &&
               answers.map((answer) => {
                 return (
-                  <>
+                  <div key={answer.id}>
                     <Answer
                       key={answer.id}
                       author={accounts.get(answer.author)}
                       content={answer.content}
-                      replies={replies.filter((reply) =>
-                        answer.replies.includes(reply.id),
-                      )}
+                      replies={
+                        replies &&
+                        replies.filter((reply) =>
+                          answer.replies.includes(reply.id),
+                        )
+                      }
                       authors={accounts}
                     />
-                    <button
-                      className="text-md ml-auto mr-7 mt-2 flex w-fit gap-2 rounded-xl bg-teal-800 px-3 py-2 text-slate-200 transition hover:bg-teal-600 hover:text-white/80 dark:bg-teal-500 dark:hover:bg-teal-300 dark:hover:text-slate-800"
-                      onClick={(e) => {
-                        const message = prompt("Enter your reply");
-                        if (!message) {
-                          return;
-                        }
-                        // toast.promise(postReply(answer.id, message), {
-                        //   success: "Posted",
-                        //   error: "Could not post your reply",
-                        //   loading: "Posting your reply",
-                        // });
-                      }}
-                    >
-                      <Reply />
-                      Reply
-                    </button>
-                  </>
+                    <div className="text-right lg:mr-10">
+                      <GetMarkdownInput
+                        role="minor"
+                        minorId={answer.id}
+                        onUpload={postNewReply}
+                        triggerMessage="Reply"
+                        header="Replying to an answer"
+                        markdown
+                      />
+                    </div>
+                  </div>
                 );
               })}
 
-            <section className="container mx-auto mt-6">
-              <div className="rounded-lg border border-green-200 bg-green-50 p-4 shadow-md dark:border-green-600 dark:bg-green-950">
-                <h2 className="mb-4 text-xl font-semibold dark:text-slate-300">
-                  Post Your Answer
-                </h2>
-                <GetAnswer onPost={postAnswer} />
-              </div>
-            </section>
+            <div className="mx-auto my-5 w-fit">
+              <GetMarkdownInput
+                onUpload={postNewAnswer}
+                role="major"
+                triggerMessage="New Answer"
+                header="Posting new answer"
+                markdown
+              />
+            </div>
           </div>
         </>
       )}

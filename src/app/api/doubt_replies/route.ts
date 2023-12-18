@@ -29,6 +29,8 @@ export async function GET(req: NextRequest) {
     const collection = database.collection("doubt_replies");
 
     const post = await collection.findOne({ id });
+
+    await client.close();
     return NextResponse.json(post);
   } catch (e) {
     throw new Error(`Error in fetching doubt reply: ${e}`);
