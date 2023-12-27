@@ -15,7 +15,7 @@ export default function Home() {
             {/* Hero */}
             <h1 className="mb-3 pt-7 text-6xl font-semibold tracking-tighter sm:text-center">
               Social Media{" "}
-              <span className="block text-blue-600 dark:text-blue-500 sm:inline">
+              <span className="block text-blue-600 sm:inline dark:text-blue-500">
                 made better
               </span>
             </h1>

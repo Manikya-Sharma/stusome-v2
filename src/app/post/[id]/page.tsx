@@ -341,7 +341,7 @@ export default function Page({ params }: Params) {
         </nav>
 
         {/* Title */}
-        <div className="relative mb-5 mt-10 dark:z-10 md:mt-0">
+        <div className="relative mb-5 mt-10 md:mt-0 dark:z-10">
           <h1 className="text-center text-5xl">{post?.title}</h1>
           {!loading && (
             <cite className="mt-3 block text-center text-lg text-muted-foreground">
@@ -375,7 +375,7 @@ export default function Page({ params }: Params) {
                 return (
                   <div
                     key={tag}
-                    className="mx-[2px] my-[2px] rounded-xl bg-slate-600 px-[4px] py-[2px] dark:text-slate-300 sm:w-[80%]"
+                    className="mx-[2px] my-[2px] rounded-xl bg-slate-600 px-[4px] py-[2px] sm:w-[80%] dark:text-slate-300"
                   >
                     {tag}
                   </div>

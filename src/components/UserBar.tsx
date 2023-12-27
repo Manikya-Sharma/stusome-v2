@@ -41,7 +41,7 @@ const UserBar = () => {
     <TooltipProvider>
       <nav
         className={cn(
-          "fixed left-1/2 z-10 flex w-fit -translate-x-1/2 items-center justify-center gap-3 rounded-xl bg-gray-300 px-2 py-2 transition-all dark:bg-gray-700 md:inset-y-0 md:left-0 md:mt-16 md:translate-x-0 md:flex-col md:justify-start md:bg-[rgba(175,175,175,0.3)] md:px-2 md:pt-5 md:backdrop-blur-sm md:dark:bg-[rgba(50,50,50,0.3)]",
+          "fixed left-1/2 z-10 flex w-fit -translate-x-1/2 items-center justify-center gap-3 rounded-xl bg-gray-300 px-2 py-2 transition-all md:inset-y-0 md:left-0 md:mt-16 md:translate-x-0 md:flex-col md:justify-start md:bg-[rgba(175,175,175,0.3)] md:px-2 md:pt-5 md:backdrop-blur-sm dark:bg-gray-700 md:dark:bg-[rgba(50,50,50,0.3)]",
           {
             "bottom-3": hide,
             "-bottom-14": !hide,
@@ -55,7 +55,7 @@ const UserBar = () => {
             <Button
               variant="secondary"
               className={cn(
-                "z-10 cursor-pointer hover:bg-gray-800 hover:text-white/80 dark:hover:bg-gray-300 dark:hover:text-black/80 md:flex md:w-full md:items-center md:justify-start",
+                "z-10 cursor-pointer hover:bg-gray-800 hover:text-white/80 md:flex md:w-full md:items-center md:justify-start dark:hover:bg-gray-300 dark:hover:text-black/80",
                 {
                   "bg-gradient-to-br from-[rgba(50,150,250,0.8)] to-[rgba(50,250,150,0.8)] text-white dark:from-[rgba(0,50,150,0.8)] dark:to-[rgba(0,150,50,0.8)]":
                     path === "/dashboard",
@@ -85,7 +85,7 @@ const UserBar = () => {
             <Button
               variant="secondary"
               className={cn(
-                "z-10 cursor-pointer hover:bg-gray-800 hover:text-white/80 dark:hover:bg-gray-300 dark:hover:text-black/80 md:flex md:w-full md:items-center md:justify-start",
+                "z-10 cursor-pointer hover:bg-gray-800 hover:text-white/80 md:flex md:w-full md:items-center md:justify-start dark:hover:bg-gray-300 dark:hover:text-black/80",
                 {
                   "bg-gradient-to-br from-[rgba(50,150,250,0.8)] to-[rgba(50,250,150,0.8)] text-white dark:from-[rgba(0,50,150,0.8)] dark:to-[rgba(0,150,50,0.8)]":
                     path === "/chats",
@@ -115,7 +115,7 @@ const UserBar = () => {
             <Button
               variant="secondary"
               className={cn(
-                "z-10 cursor-pointer hover:bg-gray-800 hover:text-white/80 dark:hover:bg-gray-300 dark:hover:text-black/80 md:flex md:w-full md:items-center md:justify-start",
+                "z-10 cursor-pointer hover:bg-gray-800 hover:text-white/80 md:flex md:w-full md:items-center md:justify-start dark:hover:bg-gray-300 dark:hover:text-black/80",
                 {
                   "bg-gradient-to-br from-[rgba(50,150,250,0.8)] to-[rgba(50,250,150,0.8)] text-white dark:from-[rgba(0,50,150,0.8)] dark:to-[rgba(0,150,50,0.8)]":
                     path === "/explore",
@@ -145,7 +145,7 @@ const UserBar = () => {
             <Button
               variant="secondary"
               className={cn(
-                "z-10 cursor-pointer hover:bg-gray-800 hover:text-white/80 dark:hover:bg-gray-300 dark:hover:text-black/80 md:flex md:w-full md:items-center md:justify-start",
+                "z-10 cursor-pointer hover:bg-gray-800 hover:text-white/80 md:flex md:w-full md:items-center md:justify-start dark:hover:bg-gray-300 dark:hover:text-black/80",
                 {
                   "bg-gradient-to-br from-[rgba(50,150,250,0.8)] to-[rgba(50,250,150,0.8)] text-white dark:from-[rgba(0,50,150,0.8)] dark:to-[rgba(0,150,50,0.8)]":
                     path === "/settings",

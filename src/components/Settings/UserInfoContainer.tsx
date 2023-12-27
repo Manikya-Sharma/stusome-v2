@@ -30,7 +30,7 @@ export default function UserInfoContainer({
 
       <div
         className={
-          "fixed h-[100vh] max-w-fit overflow-y-hidden rounded-tl-3xl border-l border-t border-zinc-300 bg-[rgba(226,232,240,0.7)] px-5 backdrop-blur-sm transition-all duration-200 dark:bg-[rgba(51,65,85,0.7)] sm:static sm:mr-3 sm:block sm:max-w-full sm:grow sm:rounded-tr-3xl sm:border-none lg:max-w-[30vw]" +
+          "fixed h-[100vh] max-w-fit overflow-y-hidden rounded-tl-3xl border-l border-t border-zinc-300 bg-[rgba(226,232,240,0.7)] px-5 backdrop-blur-sm transition-all duration-200 sm:static sm:mr-3 sm:block sm:max-w-full sm:grow sm:rounded-tr-3xl sm:border-none lg:max-w-[30vw] dark:bg-[rgba(51,65,85,0.7)]" +
           (showMenu
             ? " translate-x-[calc(100vw-100%)] sm:translate-x-0"
             : " translate-x-[110vw] sm:translate-x-0")

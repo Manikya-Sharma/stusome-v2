@@ -224,7 +224,7 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
                     return (
                       <p
                         key={tag}
-                        className="mx-1 block w-fit rounded-xl bg-slate-300 px-2 py-1 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200 md:text-sm"
+                        className="mx-1 block w-fit rounded-xl bg-slate-300 px-2 py-1 text-xs text-slate-700 md:text-sm dark:bg-slate-800 dark:text-slate-200"
                       >
                         {tag}
                       </p>

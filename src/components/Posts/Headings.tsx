@@ -30,7 +30,7 @@ export default function Headings(props: Props) {
         return (
           <li
             key={h}
-            className="my-4 w-fit text-lg underline-offset-2 hover:underline dark:text-slate-300 md:my-2 md:text-sm"
+            className="my-4 w-fit text-lg underline-offset-2 hover:underline md:my-2 md:text-sm dark:text-slate-300"
           >
             <p
               className={`${getId()} cursor-pointer`}

@@ -23,7 +23,7 @@ const PostPreview = ({
   const router = useRouter();
   return (
     <Card
-      className="group mx-auto w-[80%] max-w-prose cursor-pointer transition-all hover:scale-105 hover:border-black/30 hover:bg-black/5 dark:border-white/30 md:w-full"
+      className="group mx-auto w-[80%] max-w-prose cursor-pointer transition-all hover:scale-105 hover:border-black/30 hover:bg-black/5 md:w-full dark:border-white/30"
       onClick={() => router.push(`/post/${post.id}`)}
       aria-roledescription="link"
     >

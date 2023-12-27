@@ -24,7 +24,7 @@ const Page = () => {
             Sign-in to your account
           </p>
 
-          <form className="border-px md:w-xl mx-auto mb-4 min-w-fit max-w-md rounded border border-black/10 bg-white px-10 pb-8 pt-6 dark:border-white/10 dark:bg-black md:px-12 md:py-8">
+          <form className="border-px md:w-xl mx-auto mb-4 min-w-fit max-w-md rounded border border-black/10 bg-white px-10 pb-8 pt-6 md:px-12 md:py-8 dark:border-white/10 dark:bg-black">
             <div className="mb-4">
               <Label
                 className="mb-2 block text-sm font-semibold text-gray-500"
