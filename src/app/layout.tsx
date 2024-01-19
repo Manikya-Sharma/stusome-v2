@@ -11,7 +11,20 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "stusome",
-  description: "The Social Media App for students",
+  description: "Student Social Media: The social media website you need",
+  openGraph: {
+    title: "stusome",
+    description: "Social media by students, for students",
+    type: "website",
+    url: "https://stusome-v2.vercel.app",
+    siteName: "stusome",
+    images: [
+      {
+        url: "https://stusome-v2.vercel.app/logo.png",
+      },
+    ],
+    locale: "en_US",
+  },
 };
 
 export default function RootLayout({
