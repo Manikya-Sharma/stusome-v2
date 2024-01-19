@@ -1,40 +1,49 @@
 "use client";
 
-import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import toast from "react-hot-toast";
 import { z } from "zod";
 import { postSchema } from "@/types/schemas";
-import { zodResolver } from "@hookform/resolvers/zod";
 import Editor from "@/components/Editor";
 
 type formType = z.infer<typeof postSchema>;
 
 const App = () => {
-  const { register, handleSubmit } = useForm<formType>({
-    resolver: zodResolver(postSchema),
-  });
-  const onFormSubmit = (data: any) => console.log(data);
-
-  const onErrors = (errors: any) => {
-    if (errors.content) {
-      toast.error(errors.content.message);
-    }
-    if (errors.title) {
-      toast.error(errors.title.message);
-    }
-    if (errors.tags) {
-      toast.error(errors.tags.message);
-    }
-    if (errors.coverImgFull) {
-      toast.error(errors.coverImgFull.message);
-    }
+  const formState: formType = {
+    content: "",
+    title: "",
+    coverImgFull: "",
+    tags: [],
   };
+  function changeContent(newContent: string) {
+    formState.content = newContent;
+  }
+  function changeTitle(newTitle: string) {
+    formState.title = newTitle;
+  }
+  function changeCoverImg(newImage: string) {
+    formState.coverImgFull = newImage;
+  }
+  function changeTags(newTags: Array<string>) {
+    formState.tags = newTags;
+  }
+
   return (
     <div>
-      <Editor />
-      <Button className="mx-auto my-10 block text-2xl" size="lg">
+      <Editor
+        changeContent={changeContent}
+        changeTitle={changeTitle}
+        changeCoverImg={changeCoverImg}
+        changeTags={changeTags}
+      />
+      <Button
+        className="mx-auto my-10 block text-2xl"
+        size="lg"
+        type="submit"
+        onClick={() => {
+          console.log(formState);
+        }}
+      >
         Post
       </Button>
     </div>

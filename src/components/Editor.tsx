@@ -4,15 +4,27 @@ import Content from "./EditorComponents/Content";
 import Tags from "./EditorComponents/Tags";
 import Title from "./EditorComponents/Title";
 
-const Editor = () => {
+interface Props {
+  changeContent: Function;
+  changeTitle: Function;
+  changeCoverImg: Function;
+  changeTags: Function;
+}
+
+const Editor = ({
+  changeContent,
+  changeCoverImg,
+  changeTags,
+  changeTitle,
+}: Props) => {
   return (
     <div>
-      <Title />
+      <Title changeTitle={changeTitle} />
       <div className="mt-10">
-        <Content />
+        <Content changeContent={changeContent} />
       </div>
       <div className="mt-10">
-        <Tags />
+        <Tags changeTags={changeTags} />
       </div>
     </div>
   );

@@ -33,13 +33,7 @@ export default function ShowMarkdown(props: Props) {
       rehypePlugins={[rehypeKatex, rehypeHighlight]}
       components={{
         h1({ node, ...props }) {
-          return (
-            <h2
-              className="cursor-pointer pb-3 pt-10 underline-offset-1 after:ml-2 after:text-slate-300 hover:underline hover:after:content-['\00A7'] md:pb-0 md:pt-2"
-              id={generateId().toString()}
-              {...props}
-            ></h2>
-          );
+          return <h2 id={generateId().toString()} {...props}></h2>;
         },
         h2: "h3",
         h3: "h4",
