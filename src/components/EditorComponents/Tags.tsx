@@ -6,9 +6,19 @@ import { Button } from "../ui/button";
 import { Plus, X } from "lucide-react";
 import { Badge } from "../ui/badge";
 
-export default function Tags({ changeTags }: { changeTags: Function }) {
+export default function Tags({
+  changeTags,
+  init,
+}: {
+  changeTags: Function;
+  init: Array<string>;
+}) {
   const [tags, setTags] = useState<Array<string>>([]);
   const tagRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    setTags(init);
+  }, [init]);
 
   useEffect(() => {
     changeTags(tags);

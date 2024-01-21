@@ -9,6 +9,7 @@ import Editor from "@/components/Editor";
 type formType = z.infer<typeof postSchema>;
 
 const App = () => {
+  // TODO: fetch data and put it in formState initially, everything is already wired
   const formState: formType = {
     content: "",
     title: "",
@@ -31,6 +32,7 @@ const App = () => {
   return (
     <div>
       <Editor
+        state={formState}
         changeContent={changeContent}
         changeTitle={changeTitle}
         changeCoverImg={changeCoverImg}

@@ -3,15 +3,20 @@
 import TextAreaAutoSize from "react-textarea-autosize";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import ShowMarkdown from "../ShowMarkdown";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Content({
   changeContent,
+  init,
 }: {
   changeContent: Function;
+  init: string;
 }) {
   let textAreaRef = useRef<HTMLTextAreaElement>(null);
   let [content, setContent] = useState<string>("");
+  useEffect(() => {
+    setContent(init);
+  }, [init]);
   return (
     <Tabs defaultValue="input" className="mx-auto max-w-[80%] lg:max-w-prose">
       <TabsList className="grid w-full max-w-[400px] grid-cols-2">
