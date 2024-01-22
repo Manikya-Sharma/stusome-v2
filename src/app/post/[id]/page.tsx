@@ -16,6 +16,15 @@ import { Discussion, Post, Reply } from "@/types/post";
 import { Account } from "@/types/user";
 import { useSession } from "next-auth/react";
 import { notFound, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Pen } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import IndeterminateLoader from "@/components/IndeterminateLoader";
 
 type Params = {
   params: { id: string };
@@ -24,6 +33,7 @@ type Params = {
 export default function Page({ params }: Params) {
   const router = useRouter();
   const { data: session } = useSession();
+  const [loadingExtraData, setLoadingExtraData] = useState<boolean>(true);
 
   // fetching data
   const id = params.id;
@@ -89,6 +99,7 @@ export default function Page({ params }: Params) {
           rawReplies.map((ans) => ans.json()),
         )) as Array<Reply>;
         setReplies(parsedReplies);
+        setLoadingExtraData(false);
       } catch (e) {
         console.log(`Error: ${e}`);
       }
@@ -147,6 +158,7 @@ export default function Page({ params }: Params) {
   // post new discussion
 
   async function postNewDiscussion(content: string) {
+    setLoadingExtraData(true);
     if (!session || !session.user || !session.user.email) return;
     if (!post) return;
     const new_discussion: Discussion = {
@@ -182,12 +194,14 @@ export default function Page({ params }: Params) {
           "Content-Type": "application/json",
         },
       });
+      setLoadingExtraData(false);
     } catch (e) {
       console.log(`Error occurred: ${e}`);
     }
   }
 
   async function postNewReply(content: string, discussionId: string) {
+    setLoadingExtraData(true);
     if (!session || !session.user || !session.user.email) return;
     if (!post) return;
     const reply: Reply = {
@@ -240,6 +254,7 @@ export default function Page({ params }: Params) {
           "Content-Type": "application/json",
         },
       });
+      setLoadingExtraData(false);
     } catch (e) {
       console.log(`Error occurred: ${e}`);
     }
@@ -329,8 +344,9 @@ export default function Page({ params }: Params) {
     <Skeleton />
   ) : (
     <div className="min-h-screen">
+      <IndeterminateLoader loading={loadingExtraData} color="white" />
       <div className="scroll-smooth p-4 transition-colors duration-200">
-        <nav className="fixed left-0 top-0 z-[100] flex h-fit max-h-[50px] w-fit items-center justify-start md:hidden">
+        <nav className="fixed left-2 top-2 z-[100] flex h-fit max-h-[50px] items-center justify-start rounded-lg backdrop-blur-md md:hidden">
           <div className="py-1 pl-3">
             <Hamburger
               toggled={openMenu}
@@ -338,8 +354,24 @@ export default function Page({ params }: Params) {
               size={18}
             />
           </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={"ghost"}
+                  onClick={() => {
+                    router.push(`/post/${id}/edit`);
+                  }}
+                >
+                  <Pen />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Edit the post</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </nav>
-
         {/* Title */}
         <div className="relative mb-5 mt-10 md:mt-0 dark:z-10">
           <h1 className="text-center text-5xl">{post?.title}</h1>
