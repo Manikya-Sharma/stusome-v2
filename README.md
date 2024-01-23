@@ -1,6 +1,6 @@
 # stusome - a social media app for students
 
-> Access our website [here](https://stusome.vercel.app)
+> Access our website [here](https://stusome-v2.vercel.app)
 
 stusome is a social media app dedicated for students who want a social media without distractions. It aims to use latest AI model to create a positive ecosystem.
 
