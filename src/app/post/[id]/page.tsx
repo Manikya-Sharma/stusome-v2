@@ -109,6 +109,7 @@ export default function Page({ params }: Params) {
 
   useEffect(() => {
     async function fetchAuthorData() {
+      setLoadingExtraData(true);
       const authors: Map<string, Account> = new Map();
       if (!post || !replies || !discussions) {
         return;
@@ -138,6 +139,7 @@ export default function Page({ params }: Params) {
         authors.set(emails[index], value);
       });
       setAccounts(authors);
+      setLoadingExtraData(false);
     }
     // get authors
     fetchAuthorData();
