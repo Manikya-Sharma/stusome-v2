@@ -31,7 +31,7 @@ const CoverImg = ({ init }: { init: string }) => {
     }
   }
   return (
-    <div>
+    <div className="lg:mr-10 lg:flex lg:items-center lg:justify-between">
       <div className="mx-auto flex w-[80%] max-w-prose items-center justify-center gap-2 lg:mx-32">
         <Input ref={inputRef} placeholder="url for cover image (optional)" />
         <Dialog>
@@ -59,6 +59,7 @@ const CoverImg = ({ init }: { init: string }) => {
       <div className="mx-auto mt-10 w-fit">
         {image ? (
           <Image
+            priority
             src={image}
             className="rounded-lg"
             alt="Selected Image"

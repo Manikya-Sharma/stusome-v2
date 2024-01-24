@@ -346,31 +346,33 @@ export default function Page({ params }: Params) {
     <div className="min-h-screen">
       <IndeterminateLoader loading={loadingExtraData} color="white" />
       <div className="scroll-smooth p-4 transition-colors duration-200">
-        <nav className="fixed left-2 top-2 z-[100] flex h-fit max-h-[50px] items-center justify-start rounded-lg backdrop-blur-md md:hidden">
-          <div className="py-1 pl-3">
+        <nav className="fixed left-2 top-2 z-[100] flex h-fit max-h-[50px] items-center justify-start rounded-lg backdrop-blur-md">
+          <div className="py-1 pl-3 md:hidden">
             <Hamburger
               toggled={openMenu}
               onToggle={() => setOpenMenu(!openMenu)}
               size={18}
             />
           </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={"ghost"}
-                  onClick={() => {
-                    router.push(`/post/${id}/edit`);
-                  }}
-                >
-                  <Pen />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Edit the post</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {post.author == session?.user?.email && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={"ghost"}
+                    onClick={() => {
+                      router.push(`/post/${id}/edit`);
+                    }}
+                  >
+                    <Pen />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Edit the post</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </nav>
         {/* Title */}
         <div className="relative mb-5 mt-10 md:mt-0 dark:z-10">
