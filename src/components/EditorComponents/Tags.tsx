@@ -46,7 +46,7 @@ export default function Tags({
   }
 
   return (
-    <div className="ml-16 mr-auto max-w-80 sm:ml-20 md:ml-28 lg:ml-32">
+    <div className="ml-16 mr-auto max-w-80 sm:ml-20 md:ml-28 md:max-w-[80%] lg:ml-32">
       <div className="flex items-center gap-2">
         <Input
           placeholder="Tag"
@@ -62,7 +62,7 @@ export default function Tags({
           <Plus />
         </Button>
       </div>
-      <div className="mt-3 flex max-w-prose flex-wrap">
+      <div className="mt-3 flex max-w-prose flex-wrap md:w-full md:max-w-[80%]">
         {tags.map((tag) => {
           return (
             <div

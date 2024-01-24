@@ -94,16 +94,28 @@ const App = ({ params }: Params) => {
         changeCoverImg={changeCoverImg}
         changeTags={changeTags}
       />
-      <Button
-        className="mx-auto my-10 block text-2xl"
-        size="lg"
-        type="submit"
-        onClick={() => {
-          console.log(formState);
-        }}
-      >
-        Post
-      </Button>
+      <div className="flex items-center justify-center gap-4">
+        <Button
+          className="my-10 block text-2xl"
+          size="lg"
+          type="submit"
+          onClick={() => {
+            console.log(formState);
+          }}
+        >
+          Post
+        </Button>
+        <Button
+          className="my-10 block text-2xl"
+          size="lg"
+          type="submit"
+          onClick={() => {
+            console.log(formState);
+          }}
+        >
+          Save as Draft
+        </Button>
+      </div>
     </div>
   );
 };

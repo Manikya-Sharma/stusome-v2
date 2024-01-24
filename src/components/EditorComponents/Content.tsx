@@ -18,7 +18,7 @@ export default function Content({
     setContent(init);
   }, [init]);
   return (
-    <Tabs defaultValue="input" className="mx-auto max-w-[80%] lg:max-w-prose">
+    <Tabs defaultValue="input" className="mx-auto max-w-[80%] md:mx-24">
       <TabsList className="grid w-full max-w-[400px] grid-cols-2">
         <TabsTrigger value="input">Input</TabsTrigger>
         <TabsTrigger value="preview">Preview</TabsTrigger>
@@ -27,7 +27,7 @@ export default function Content({
         <TextAreaAutoSize
           maxRows={10}
           minRows={4}
-          className="w-full rounded-md border border-black px-3 py-2 lg:max-w-prose dark:border-white"
+          className="w-full rounded-md border border-black px-3 py-2 dark:border-white"
           ref={textAreaRef}
           value={content ?? ""}
           onChange={() => {
@@ -37,7 +37,7 @@ export default function Content({
         />
       </TabsContent>
       <TabsContent value="preview">
-        <div className="markdown-wrapper max-h-[263px] min-h-[119px] overflow-y-auto rounded-md border border-black p-2 lg:max-w-prose dark:border-white">
+        <div className="markdown-wrapper max-h-[263px] min-h-[119px] overflow-y-auto rounded-md border border-black p-2 dark:border-white">
           {content ? (
             <ShowMarkdown data={content} />
           ) : (
