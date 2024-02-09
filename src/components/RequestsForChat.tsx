@@ -7,8 +7,18 @@ import { useEffect, useState } from "react";
 
 const RequestsForChat = () => {
   const { data: session } = useSession();
-  const [received, setReceived] = useState<Array<string>>([]);
-  const [sent, setSent] = useState<Array<string>>([]);
+  const [received, setReceived] = useState<
+    Array<{
+      name: string;
+      from: string;
+    }>
+  >([]);
+  const [sent, setSent] = useState<
+    Array<{
+      name: string;
+      to: string;
+    }>
+  >([]);
   useEffect(() => {
     async function getRequests() {
       try {
@@ -25,9 +35,21 @@ const RequestsForChat = () => {
         all_requests.map((request) => {
           const [where, by] = request.split(":");
           if (where == "to") {
-            setSent((prev) => [...prev, by]);
+            setSent((prev) => [
+              ...prev,
+              {
+                name: by,
+                to: by,
+              },
+            ]);
           } else {
-            setReceived((prev) => [...prev, by]);
+            setReceived((prev) => [
+              ...prev,
+              {
+                name: by,
+                from: by,
+              },
+            ]);
           }
         });
       } catch (e) {
@@ -46,12 +68,12 @@ const RequestsForChat = () => {
         </TabsList>
         <TabsContent value="received">
           {received.map((rcv) => {
-            return <ChatRequest key={rcv} name={rcv} />;
+            return <ChatRequest key={rcv.from} account={rcv} />;
           })}
         </TabsContent>
         <TabsContent value="sent">
           {sent.map((snd) => {
-            return <ChatRequest key={snd} name={snd} sent />;
+            return <ChatRequest key={snd.to} account={snd} sent />;
           })}
         </TabsContent>
       </Tabs>

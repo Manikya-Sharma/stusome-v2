@@ -1,14 +1,32 @@
+"use client";
+
+import { useSession } from "next-auth/react";
 import ChatBlock from "./ChatBlock";
+import { use, useEffect, useState } from "react";
+import { Account, ChatAccount } from "@/types/user";
+import { getEmailsFromChatId } from "@/lib/utils";
 
 const RecentChats = () => {
+  const { data: session } = useSession();
+  const [recentChats, setRecentChats] = useState<Array<string>>([]);
+  useEffect(() => {
+    if (!session?.user?.email) return;
+    async function getAccountData() {
+      const rawUser = await fetch(
+        `/api/chat/user?email=${session?.user?.email}`,
+      );
+      const user = (await rawUser.json()) as ChatAccount;
+      setRecentChats(user.chats);
+    }
+    getAccountData();
+  }, [session?.user?.email]);
   return (
     <div>
       <h1 className="text-center text-5xl tracking-tight">Recent Chats</h1>
       <div className="my-2">
-        <ChatBlock name="ABC" />
-        <ChatBlock name="123" />
-        <ChatBlock name="XYZ" />
-        <ChatBlock name="PQR" />
+        {recentChats.map((chat) => {
+          return <ChatBlock name={chat} key={chat} />;
+        })}
       </div>
     </div>
   );

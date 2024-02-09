@@ -1,3 +1,5 @@
+"use client";
+
 import { Ban, Check, X } from "lucide-react";
 import { Button } from "./ui/button";
 import {
@@ -6,17 +8,41 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
+import { useSession } from "next-auth/react";
 
 export default function ChatRequest({
   sent,
-  name,
+  account,
 }: {
   sent?: boolean;
-  name: string;
+  account: {
+    name: string;
+    from?: string;
+    to?: string;
+  };
 }) {
+  const { data: session } = useSession();
+
+  async function acceptRequest() {
+    if (!session?.user?.email) {
+      return;
+    }
+    await fetch(`/api/chat/request/respond`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: account.from,
+        to: session?.user?.email,
+        how: "accept",
+      }),
+    });
+  }
+
   return (
     <div className="mx-auto my-2 flex max-w-prose items-center justify-between rounded-lg bg-slate-200 px-3 py-4 text-slate-700 dark:bg-slate-700 dark:text-slate-200">
-      <div>{name}</div>
+      <div>{account.name}</div>
       <div>
         {sent ? (
           <div>
@@ -36,7 +62,13 @@ export default function ChatRequest({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" className="px-2">
+                  <Button
+                    variant="ghost"
+                    className="px-2"
+                    onClick={() => {
+                      acceptRequest();
+                    }}
+                  >
                     <Check className="text-emerald-400" />
                   </Button>
                 </TooltipTrigger>

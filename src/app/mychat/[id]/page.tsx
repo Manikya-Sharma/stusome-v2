@@ -27,8 +27,12 @@ export default function Page({ params }: { params: { id: string } }) {
   const [friend, setFriend] = useState<Account | null>(null);
 
   useEffect(() => {
-    // get user account
+    // get friend account
     async function getData() {
+      if (!session?.user?.email) return;
+      console.log(
+        `/api/chat/user?email=${from_user_is_me ? to_user : from_user}`,
+      );
       const rawAccount = await fetch(
         `/api/chat/user?email=${from_user_is_me ? to_user : from_user}`,
       );
@@ -36,7 +40,7 @@ export default function Page({ params }: { params: { id: string } }) {
       setFriend(account);
     }
     getData();
-  }, [from_user, from_user_is_me, to_user]);
+  }, [from_user, from_user_is_me, to_user, session?.user?.email]);
 
   useEffect(() => {
     // get chats
@@ -102,16 +106,14 @@ export default function Page({ params }: { params: { id: string } }) {
           .map((chat) => {
             return (
               <div
-                //@ts-ignore
                 key={chat.id}
                 className={cn(
                   "relative my-3 w-fit max-w-[60%] rounded-bl-md rounded-br-md px-5 py-3",
-                  //@ts-ignore
-                  from_user_is_me
+
+                  chat.to === (from_user_is_me ? from_user : to_user)
                     ? "rounded-tl-md rounded-tr-xl bg-emerald-300 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-300"
                     : cn(
                         "ml-auto rounded-tl-xl rounded-tr-md",
-                        //@ts-ignore
                         chat.read
                           ? "bg-lime-300 text-lime-800 dark:bg-teal-950 dark:text-teal-100"
                           : "bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-50",
