@@ -1,7 +1,6 @@
 import RecentChats from "@/components/RecentChats";
 import RequestsForChat from "@/components/RequestsForChat";
 import { Separator } from "@/components/ui/separator";
-
 const Page = () => {
   return (
     <div>

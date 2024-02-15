@@ -2,9 +2,8 @@
 
 import { useSession } from "next-auth/react";
 import ChatBlock from "./ChatBlock";
-import { use, useEffect, useState } from "react";
-import { Account, ChatAccount } from "@/types/user";
-import { getEmailsFromChatId } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { ChatAccount } from "@/types/user";
 
 const RecentChats = () => {
   const { data: session } = useSession();

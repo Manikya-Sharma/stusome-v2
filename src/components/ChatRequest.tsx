@@ -13,6 +13,7 @@ import { useSession } from "next-auth/react";
 export default function ChatRequest({
   sent,
   account,
+  setState,
 }: {
   sent?: boolean;
   account: {
@@ -20,6 +21,7 @@ export default function ChatRequest({
     from?: string;
     to?: string;
   };
+  setState?: Function;
 }) {
   const { data: session } = useSession();
 
@@ -38,6 +40,68 @@ export default function ChatRequest({
         how: "accept",
       }),
     });
+    if (!setState) return;
+    setState(
+      (
+        prev: Array<{ name: string; from: string }>,
+      ): Array<{ name: string; from: string }> => {
+        return prev.filter(
+          (elem) => elem.name != account.from && elem.from != account.from,
+        );
+      },
+    );
+  }
+
+  async function removeReceivedRequest() {
+    if (!session?.user?.email) return;
+    await fetch("/api/chat/request/respond", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: account.from,
+        to: session.user.email,
+        how: "reject",
+      }),
+    });
+    if (setState) {
+      setState(
+        (
+          prev: Array<{ name: string; from: string }>,
+        ): Array<{ name: string; from: string }> => {
+          return prev.filter(
+            (elem) => elem.name != account.from && elem.from != account.from,
+          );
+        },
+      );
+    }
+  }
+
+  async function removeSentRequest() {
+    if (!session?.user?.email || !sent) return;
+    await fetch("/api/chat/request/respond", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: session.user.email,
+        to: account.to,
+        how: "reject",
+      }),
+    });
+    if (setState) {
+      setState(
+        (
+          prev: Array<{ name: string; to: string }>,
+        ): Array<{ name: string; to: string }> => {
+          return prev.filter(
+            (elem) => elem.name != account.to && elem.to != account.to,
+          );
+        },
+      );
+    }
   }
 
   return (
@@ -49,7 +113,11 @@ export default function ChatRequest({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" className="px-2">
+                  <Button
+                    variant="ghost"
+                    className="px-2"
+                    onClick={removeSentRequest}
+                  >
                     <X className="text-pink-500" />
                   </Button>
                 </TooltipTrigger>
@@ -76,7 +144,11 @@ export default function ChatRequest({
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" className="px-2">
+                  <Button
+                    variant="ghost"
+                    className="px-2"
+                    onClick={removeReceivedRequest}
+                  >
                     <X className="text-pink-500" />
                   </Button>
                 </TooltipTrigger>
