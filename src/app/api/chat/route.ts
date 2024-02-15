@@ -11,10 +11,11 @@ export async function POST(req: Request) {
       message: string;
       to: string;
       read: boolean;
+      time: number;
     };
   };
   await db.zadd(getChatId(from_email, to_email), {
-    score: Date.now(),
+    score: message.time,
     member: JSON.stringify(message),
   });
   return NextResponse.json("ok");
@@ -35,5 +36,28 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  return NextResponse.error();
+  // only to mark chats as read
+  const { from_email, to_email, message } = (await req.json()) as {
+    from_email: string;
+    to_email: string;
+    message: {
+      id: string;
+      message: string;
+      to: string;
+      read: boolean;
+      time: number;
+    };
+  };
+
+  const result = await db.zrem(
+    getChatId(from_email, to_email),
+    JSON.stringify(message),
+  );
+
+  await db.zadd(getChatId(from_email, to_email), {
+    score: message.time,
+    member: JSON.stringify({ ...message, read: true }),
+  });
+
+  return NextResponse.json("ok");
 }

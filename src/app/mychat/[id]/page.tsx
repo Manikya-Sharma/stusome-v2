@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import { v4 as uuid } from "uuid";
 import TextareaAutoSize from "react-textarea-autosize";
+import { format } from "date-fns";
 
 export default function Page({ params }: { params: { id: string } }) {
   const chatRef = useRef<HTMLTextAreaElement | null>(null);
@@ -17,6 +18,7 @@ export default function Page({ params }: { params: { id: string } }) {
       message: string;
       to: string;
       read: boolean;
+      time: number;
     }>
   >([]);
   let { data: session } = useSession();
@@ -51,11 +53,37 @@ export default function Page({ params }: { params: { id: string } }) {
         message: string;
         to: string;
         read: boolean;
+        time: number;
       }>;
       setChats(parsedChats.filter((chat) => typeof chat !== "number"));
     }
     getData();
   }, [id]);
+
+  // set chats from other end to read
+  useEffect(() => {
+    async function updateData() {
+      if (!chats || chats.length === 0 || !session?.user?.email) return;
+      // create deep copy
+      const promises = chats.map((chat) => {
+        if (chat.to == session?.user?.email && !chat.read) {
+          return fetch("/api/chat", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from_email: from_user,
+              to_email: to_user,
+              message: chat,
+            }),
+          });
+        }
+      });
+      await Promise.all(promises);
+    }
+    updateData();
+  }, [chats, session?.user?.email, from_user, to_user]);
 
   async function sendChat() {
     if (
@@ -81,13 +109,20 @@ export default function Page({ params }: { params: { id: string } }) {
           message: value,
           to: friend.email,
           read: false,
+          time: Date.now(),
         },
       }),
     });
     setChats((prev) => {
       return [
         ...prev,
-        { id: new_id, message: value, to: friend.email, read: false },
+        {
+          id: new_id,
+          message: value,
+          to: friend.email,
+          read: false,
+          time: Date.now(),
+        },
       ];
     });
     chatRef.current.value = "";
@@ -105,22 +140,33 @@ export default function Page({ params }: { params: { id: string } }) {
           .filter((chat) => typeof chat !== "number")
           .map((chat) => {
             return (
-              <div
-                key={chat.id}
-                className={cn(
-                  "relative my-3 w-fit max-w-[60%] rounded-bl-md rounded-br-md px-5 py-3",
+              <div key={chat.id}>
+                <div
+                  className={cn(
+                    "relative my-3 w-fit max-w-[60%] rounded-bl-md rounded-br-md px-5 py-3",
 
-                  chat.to === (from_user_is_me ? from_user : to_user)
-                    ? "rounded-tl-md rounded-tr-xl bg-emerald-300 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-300"
-                    : cn(
-                        "ml-auto rounded-tl-xl rounded-tr-md",
-                        chat.read
-                          ? "bg-lime-300 text-lime-800 dark:bg-teal-950 dark:text-teal-100"
-                          : "bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-50",
-                      ),
-                )}
-              >
-                {typeof chat != "number" ? chat.message : ""}
+                    chat.to === (from_user_is_me ? from_user : to_user)
+                      ? "rounded-tl-md rounded-tr-xl bg-emerald-300 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-300"
+                      : cn(
+                          "ml-auto rounded-tl-xl rounded-tr-md",
+                          chat.read
+                            ? "bg-lime-300 text-lime-800 dark:bg-teal-950 dark:text-teal-100"
+                            : "bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-50",
+                        ),
+                  )}
+                >
+                  {chat.message}
+                </div>
+                <div
+                  className={cn(
+                    "-mt-2 w-fit text-xs text-muted-foreground",
+                    chat.to === (from_user_is_me ? from_user : to_user)
+                      ? ""
+                      : "ml-auto",
+                  )}
+                >
+                  {format(chat.time, "HH:mm")}
+                </div>
               </div>
             );
           })}
