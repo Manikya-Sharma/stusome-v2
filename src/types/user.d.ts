@@ -13,3 +13,11 @@ export type Message = {
   message: string;
   timeStamp: number;
 };
+
+export type ChatAccount = {
+  name: string;
+  email: string;
+  image: string;
+  image_third_party: boolean;
+  chats: Array<string>;
+};
