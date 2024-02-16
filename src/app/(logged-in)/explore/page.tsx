@@ -116,9 +116,9 @@ const Page = () => {
     getAuthors(posts, doubts);
   }, [posts, doubts]);
 
-  if (status === "unauthenticated") {
-    router.replace("/login");
-  }
+  // if (status === "unauthenticated") {
+  //   router.replace("/login");
+  // }
 
   return (
     <div className="mx-auto max-w-6xl">

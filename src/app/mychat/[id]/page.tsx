@@ -3,15 +3,17 @@ import ShowProfileImage from "@/components/ShowProfileImage";
 import { Button } from "@/components/ui/button";
 import { cn, getEmailsFromChatId } from "@/lib/utils";
 import { Account } from "@/types/user";
-import { SendHorizontal } from "lucide-react";
+import { Loader, SendHorizontal } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import { v4 as uuid } from "uuid";
 import TextareaAutoSize from "react-textarea-autosize";
 import { format } from "date-fns";
 import { getPusherId, pusherClient } from "@/lib/pusher";
+import { useRouter } from "next/navigation";
 
 export default function Page({ params }: { params: { id: string } }) {
+  const [isSending, setIsSending] = useState<boolean>(false);
   const chatRef = useRef<HTMLTextAreaElement | null>(null);
   let [chats, setChats] = useState<
     Array<{
@@ -22,12 +24,27 @@ export default function Page({ params }: { params: { id: string } }) {
       time: number;
     }>
   >([]);
-  let { data: session } = useSession();
+  let { data: session, status } = useSession();
   const id = params.id.replaceAll("%3A", ":").replaceAll("%40", "@");
   let [from_user, to_user] = getEmailsFromChatId(id);
   let from_user_is_me = session?.user?.email == from_user;
 
   const [friend, setFriend] = useState<Account | null>(null);
+
+  const router = useRouter();
+  // prevent unauthorized access
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+    if (status === "loading") return;
+    if (
+      session?.user?.email !== from_user &&
+      session?.user?.email !== to_user
+    ) {
+      router.replace("/login");
+    }
+  }, [router, status, session?.user?.email, from_user, to_user]);
 
   useEffect(() => {
     // get friend account
@@ -140,6 +157,7 @@ export default function Page({ params }: { params: { id: string } }) {
   }, [id, chats, session?.user?.email, from_user, to_user]);
 
   async function sendChat() {
+    setIsSending(true);
     if (
       !chatRef ||
       !chatRef.current ||
@@ -149,6 +167,7 @@ export default function Page({ params }: { params: { id: string } }) {
       return;
     }
     const value = chatRef.current.value;
+    if (value.trim().length === 0) return;
     const new_id = uuid();
     await fetch("/api/chat", {
       method: "POST",
@@ -170,6 +189,7 @@ export default function Page({ params }: { params: { id: string } }) {
 
     chatRef.current.value = "";
     chatRef.current.focus();
+    setIsSending(false);
   }
 
   return (
@@ -178,7 +198,7 @@ export default function Page({ params }: { params: { id: string } }) {
         <ShowProfileImage />
         <div>{friend?.name}</div>
       </h1>
-      <div className="flex min-h-screen flex-col-reverse px-5 pb-20 pt-14 dark:bg-slate-900">
+      <div className="flex h-[86vh] flex-col-reverse overflow-y-auto px-5 pb-20 pt-14 dark:bg-slate-900">
         {chats
           .toReversed()
           .filter((chat) => typeof chat !== "number")
@@ -231,7 +251,7 @@ export default function Page({ params }: { params: { id: string } }) {
           className="mx-2 px-2"
           onClick={() => sendChat()}
         >
-          <SendHorizontal />
+          {isSending ? <Loader className="animate-spin" /> : <SendHorizontal />}
         </Button>
       </div>
     </div>

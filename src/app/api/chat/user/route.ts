@@ -1,9 +1,9 @@
 import { db } from "@/lib/db";
-import { Account } from "@/types/user";
+import { ChatAccount } from "@/types/user";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const user = (await req.json()) as Account;
+  const user = (await req.json()) as ChatAccount;
   if (await db.get(`user:${user.email}`)) {
     throw new Error("This user already exists");
   }

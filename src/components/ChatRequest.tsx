@@ -154,14 +154,15 @@ export default function ChatRequest({
                 </TooltipTrigger>
                 <TooltipContent>Reject</TooltipContent>
               </Tooltip>
-              <Tooltip>
+              {/* TODO: Add option to block later */}
+              {/* <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="ghost" className="px-2">
                     <Ban className="text-orange-800" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Block</TooltipContent>
-              </Tooltip>
+              </Tooltip> */}
             </TooltipProvider>
           </div>
         )}
