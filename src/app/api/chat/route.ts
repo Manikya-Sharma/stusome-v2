@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { getPusherId, pusherServer } from "@/lib/pusher";
 import { getChatId } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -14,10 +15,20 @@ export async function POST(req: Request) {
       time: number;
     };
   };
-  await db.zadd(getChatId(from_email, to_email), {
+  const id = getChatId(from_email, to_email);
+  await db.zadd(id, {
     score: message.time,
     member: JSON.stringify(message),
   });
+
+  await pusherServer.trigger(getPusherId(id), "chat", {
+    id: message.id,
+    message: message.message,
+    to: message.to,
+    read: message.read,
+    time: message.time,
+  });
+
   return NextResponse.json("ok");
 }
 
@@ -49,14 +60,19 @@ export async function PUT(req: NextRequest) {
     };
   };
 
-  const result = await db.zrem(
-    getChatId(from_email, to_email),
-    JSON.stringify(message),
-  );
+  if (message.read) return NextResponse.json("ok");
 
-  await db.zadd(getChatId(from_email, to_email), {
+  const id = getChatId(from_email, to_email);
+
+  await db.zrem(id, JSON.stringify(message));
+
+  await db.zadd(id, {
     score: message.time,
     member: JSON.stringify({ ...message, read: true }),
+  });
+
+  await pusherServer.trigger(getPusherId(id), "read", {
+    id: message.id,
   });
 
   return NextResponse.json("ok");

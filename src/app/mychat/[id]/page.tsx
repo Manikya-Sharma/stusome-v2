@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { v4 as uuid } from "uuid";
 import TextareaAutoSize from "react-textarea-autosize";
 import { format } from "date-fns";
+import { getPusherId, pusherClient } from "@/lib/pusher";
 
 export default function Page({ params }: { params: { id: string } }) {
   const chatRef = useRef<HTMLTextAreaElement | null>(null);
@@ -58,6 +59,40 @@ export default function Page({ params }: { params: { id: string } }) {
       setChats(parsedChats.filter((chat) => typeof chat !== "number"));
     }
     getData();
+    // subscribe to real time websocket
+    const chatHandler = ({
+      id,
+      message,
+      to,
+      read,
+      time,
+    }: {
+      id: string;
+      message: string;
+      to: string;
+      read: boolean;
+      time: number;
+    }) => {
+      // this is triggered automatically when message is sent from either side
+      setChats((prev) => {
+        return [
+          ...prev,
+          {
+            id,
+            message,
+            read,
+            time,
+            to,
+          },
+        ];
+      });
+    };
+    pusherClient.subscribe(getPusherId(id));
+    pusherClient.bind("chat", chatHandler);
+    return () => {
+      pusherClient.unsubscribe(getPusherId(id));
+      pusherClient.unbind("chat", chatHandler);
+    };
   }, [id]);
 
   // set chats from other end to read
@@ -80,10 +115,29 @@ export default function Page({ params }: { params: { id: string } }) {
           });
         }
       });
+      // set the chats to read in database
       await Promise.all(promises);
     }
+    // make it realtime
+    const readHandler = ({ id }: { id: string }) => {
+      setChats((prev) => {
+        return prev.map((msg) => {
+          if (msg.id === id) {
+            return { ...msg, read: true };
+          } else {
+            return msg;
+          }
+        });
+      });
+    };
     updateData();
-  }, [chats, session?.user?.email, from_user, to_user]);
+    pusherClient.subscribe(getPusherId(id));
+    pusherClient.bind("read", readHandler);
+    return () => {
+      pusherClient.unsubscribe(getPusherId(id));
+      pusherClient.unbind("read", readHandler);
+    };
+  }, [id, chats, session?.user?.email, from_user, to_user]);
 
   async function sendChat() {
     if (
@@ -113,18 +167,7 @@ export default function Page({ params }: { params: { id: string } }) {
         },
       }),
     });
-    setChats((prev) => {
-      return [
-        ...prev,
-        {
-          id: new_id,
-          message: value,
-          to: friend.email,
-          read: false,
-          time: Date.now(),
-        },
-      ];
-    });
+
     chatRef.current.value = "";
     chatRef.current.focus();
   }
@@ -135,8 +178,9 @@ export default function Page({ params }: { params: { id: string } }) {
         <ShowProfileImage />
         <div>{friend?.name}</div>
       </h1>
-      <div className="min-h-screen px-5 pb-20 pt-14 dark:bg-slate-900">
+      <div className="flex min-h-screen flex-col-reverse px-5 pb-20 pt-14 dark:bg-slate-900">
         {chats
+          .toReversed()
           .filter((chat) => typeof chat !== "number")
           .map((chat) => {
             return (
