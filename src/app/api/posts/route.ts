@@ -50,7 +50,7 @@ export async function PUT(req: NextRequest) {
     | "tags"
     | "coverImgFull"
     | "published";
-  if (!field || !id) throw new Error("Missing query parameters");
+  if (!id) throw new Error("Missing query parameters");
 
   const new_post = (await req.json()) as Post;
   try {
@@ -58,12 +58,39 @@ export async function PUT(req: NextRequest) {
     const database = client.db("stusome");
     const collection = database.collection("posts");
 
-    await collection.updateOne({ id }, { $set: { [field]: new_post[field] } });
+    if (field) {
+      await collection.updateOne(
+        { id },
+        { $set: { [field]: new_post[field] } },
+      );
+    } else {
+      await collection.updateOne({ id }, { $set: new_post });
+    }
 
     await client.close();
 
     return NextResponse.json({});
   } catch (e) {
     throw new Error(`Error in updating post: ${e}`);
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const client = new MongoClient(process.env.MONGODB_URI!);
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id) throw new Error("Missing query parameter");
+
+  try {
+    await client.connect();
+    const database = client.db("stusome");
+    const collection = database.collection("posts");
+
+    await collection.deleteOne({ id });
+
+    await client.close();
+
+    return NextResponse.json({});
+  } catch (e) {
+    throw new Error(`Error in deleting post: ${e}`);
   }
 }

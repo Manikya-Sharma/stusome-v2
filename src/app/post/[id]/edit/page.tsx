@@ -84,6 +84,77 @@ const App = ({ params }: Params) => {
     formState.tags = newTags;
   }
 
+  function validate() {
+    if (formState.title.trim().length === 0) {
+      toast.error("Missing title");
+      return false;
+    }
+    if (formState.content.trim().length === 0) {
+      toast.error("Missing content");
+      return false;
+    }
+    if (formState.coverImgFull?.trim().length === 0) {
+      toast("Note: you have not provided any cover image");
+    }
+    return true;
+  }
+
+  async function post() {
+    if (!validate() || !session?.user?.email) {
+      return;
+    }
+
+    const newPost: Post = {
+      ...formState,
+      author: session.user.email,
+      discussions: [],
+      published: true,
+      id,
+    };
+
+    await fetch(`/api/posts?id=${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newPost),
+    });
+  }
+
+  async function draft() {
+    if (!validate() || !session?.user?.email) {
+      return;
+    }
+
+    const newPost: Post = {
+      ...formState,
+      author: session.user.email,
+      discussions: [],
+      published: false,
+      id,
+    };
+
+    await fetch(`/api/posts?id=${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newPost),
+    });
+  }
+  async function del() {
+    if (!session?.user?.email) {
+      return;
+    }
+
+    await fetch(`/api/posts?id=${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  }
+
   return (
     <div>
       <IndeterminateLoader loading={loading} />
@@ -100,20 +171,45 @@ const App = ({ params }: Params) => {
           size="lg"
           type="submit"
           onClick={() => {
-            console.log(formState);
+            toast.promise(post(), {
+              error: "Unable to post, please try again later",
+              loading: "Posting...",
+              success: "Posted successfully",
+            });
           }}
         >
           Post
         </Button>
         <Button
+          variant={"secondary"}
           className="my-10 block text-2xl"
           size="lg"
           type="submit"
           onClick={() => {
-            console.log(formState);
+            toast.promise(draft(), {
+              error: "Unable to save your draft, please try again later",
+              loading: "Saving draft...",
+              success: "Draft saved successfully",
+            });
           }}
         >
           Save as Draft
+        </Button>
+        <Button
+          variant={"destructive"}
+          className="my-10 block text-2xl"
+          size="lg"
+          type="submit"
+          onClick={() => {
+            toast.promise(del(), {
+              error: "Unable to delete the post",
+              loading: "Deleting...",
+              success: "Deleted successfully",
+            });
+            router.back();
+          }}
+        >
+          Delete
         </Button>
       </div>
     </div>

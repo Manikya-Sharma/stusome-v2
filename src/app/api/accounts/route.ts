@@ -39,14 +39,14 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const client = new MongoClient(process.env.MONGODB_URI!);
 
-  const id = req.nextUrl.searchParams.get("id");
+  const email = req.nextUrl.searchParams.get("email");
   const field = req.nextUrl.searchParams.get("field") as
     | "name"
     | "image"
     | "image_third_party"
     | "posts"
     | "doubts";
-  if (!field || !id) throw new Error("Missing query parameters");
+  if (!field || !email) throw new Error("Missing query parameters");
 
   const new_account = (await req.json()) as Account;
   try {
@@ -55,7 +55,7 @@ export async function PUT(req: NextRequest) {
     const collection = database.collection("accounts");
 
     await collection.updateOne(
-      { id },
+      { email: email },
       { $set: { [field]: new_account[field] } },
     );
 

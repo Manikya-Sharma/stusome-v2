@@ -4,14 +4,13 @@ import { z } from "zod";
 import Content from "./EditorComponents/Content";
 import Tags from "./EditorComponents/Tags";
 import Title from "./EditorComponents/Title";
-import { postSchema } from "@/types/schemas";
-import CoverImg from "./EditorComponents/CoverImg";
+import { doubtSchema } from "@/types/schemas";
 
 interface Props {
   changeContent: Function;
   changeTitle: Function;
   changeTags: Function;
-  state: z.infer<typeof postSchema>;
+  state: z.infer<typeof doubtSchema>;
 }
 
 const Editor = ({ changeContent, changeTags, changeTitle, state }: Props) => {

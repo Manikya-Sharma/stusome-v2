@@ -11,11 +11,8 @@ export const postSchema = z.object({
       required_error: "No content provided!",
     })
     .min(1, "content should not be empty"),
-  tags: z.array(z.string()).optional(),
-  coverImgFull: z
-    .string()
-    .url({ message: "Invalid url for 3rd party image" })
-    .optional(),
+  tags: z.array(z.string()),
+  coverImgFull: z.string().url({ message: "Invalid url for 3rd party image" }),
 });
 
 export const doubtSchema = z.object({
@@ -29,9 +26,7 @@ export const doubtSchema = z.object({
       required_error: "No content provided!",
     })
     .min(1, "content should not be empty"),
-  tags: z
-    .array(z.string({ required_error: "Tag needs description" }))
-    .optional(),
+  tags: z.array(z.string({ required_error: "Tag needs description" })),
 });
 
 export const userSchema = z.object({

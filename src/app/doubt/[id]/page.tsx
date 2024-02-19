@@ -210,7 +210,7 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
     <main>
       {loading ? (
         // <DoubtLoading />
-        <></>
+        <div></div>
       ) : (
         <>
           <nav className="bg-black p-4 text-white dark:bg-slate-950">

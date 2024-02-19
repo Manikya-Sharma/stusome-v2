@@ -4,13 +4,13 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: Request) {
   const client = new MongoClient(process.env.MONGODB_URI!);
 
-  const new_reply = (await req.json()) as Doubt;
+  const new_doubt = (await req.json()) as Doubt;
   try {
     await client.connect();
     const database = client.db("stusome");
     const collection = database.collection("doubts");
 
-    await collection.insertOne(new_reply);
+    await collection.insertOne(new_doubt);
     await client.close();
     return NextResponse.json({});
   } catch (e) {

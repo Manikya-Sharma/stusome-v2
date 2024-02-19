@@ -71,7 +71,7 @@ const Page = () => {
   }, [account]);
 
   async function newPost() {
-    if (session && session.user && session.user.email) {
+    if (session && session.user && session.user.email && account) {
       const newId = uuid();
       const post: Post = {
         author: session.user.email,
@@ -90,6 +90,16 @@ const Page = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(post),
+        });
+
+        const oldPosts = account.posts;
+        const new_posts = [...oldPosts, newId];
+        await fetch(`/api/accounts?email=${account.email}&field=posts`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ posts: new_posts }),
         });
         router.push(`/post/${newId}/edit`);
       } catch (e) {
@@ -124,13 +134,13 @@ const Page = () => {
                 </Button>
               </div>
 
-              <div className="mb-5 mt-3 max-h-[45vh] overflow-y-auto overflow-x-hidden rounded-lg border-2 border-slate-300 px-3 pt-2 lg:flex lg:max-h-full lg:justify-around lg:overflow-x-auto dark:border-slate-800">
+              <div className="mb-5 mt-3 max-h-[45vh] overflow-y-auto overflow-x-hidden rounded-lg border-2 border-slate-300 px-3 pt-2 lg:flex lg:max-h-full lg:justify-start lg:overflow-x-auto dark:border-slate-800">
                 {posts &&
                   posts.map((post) => {
                     return (
                       <div
                         key={post.id}
-                        className="relative my-5 cursor-pointer overflow-hidden rounded-lg bg-slate-200 p-4 py-5 transition-transform hover:scale-105 lg:mx-3 lg:flex-1 dark:bg-slate-800"
+                        className="relative my-5 cursor-pointer overflow-hidden rounded-lg bg-slate-200 p-4 py-5 transition-transform hover:scale-105 lg:mx-3 lg:min-w-[20%] lg:max-w-[40%] lg:flex-1 dark:bg-slate-800"
                         onClick={() => router.push(`/post/${post.id}`)}
                       >
                         {post.published == false && (
@@ -168,13 +178,13 @@ const Page = () => {
                 </Button>
               </div>
 
-              <div className="mb-5 mt-3 max-h-[45vh] overflow-y-auto overflow-x-hidden rounded-lg border-2 border-slate-300 px-3 pt-2 lg:flex lg:max-h-full lg:justify-around lg:overflow-x-auto dark:border-slate-800">
+              <div className="mb-5 mt-3 max-h-[45vh] overflow-y-auto overflow-x-hidden rounded-lg border-2 border-slate-300 px-3 pt-2 lg:flex lg:max-h-full lg:justify-start lg:overflow-x-auto dark:border-slate-800">
                 {doubts &&
                   doubts.map((doubt) => {
                     return (
                       <div
                         key={doubt.id}
-                        className="my-5 cursor-pointer overflow-hidden rounded-lg bg-slate-200 p-4 py-5 transition-transform hover:scale-105 lg:mx-3 lg:flex-1 dark:bg-slate-800"
+                        className="my-5 cursor-pointer overflow-hidden rounded-lg bg-slate-200 p-4 py-5 transition-transform hover:scale-105 lg:mx-3 lg:min-w-[20%] lg:max-w-[40%] lg:flex-1 dark:bg-slate-800"
                         onClick={() => router.push(`/doubt/${doubt.id}`)}
                       >
                         <h3 className="mb-2 text-xl font-semibold">
