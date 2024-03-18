@@ -21,19 +21,20 @@ import { usePathname, useRouter } from "next/navigation";
 
 const UserBar = () => {
   const [hover, setHover] = useState<boolean>(false);
-  const [hide, setHide] = useState<boolean>(false); // hide on mobile screens
+  const [hide, setHide] = useState<boolean>(true); // hide on mobile screens
   const [scroll, setScroll] = useState<number>(0);
   useEffect(() => {
     const handleScroll = () => {
       const scrollPos = window.scrollY;
-      if (scroll > scrollPos) {
-        setHide(true);
-      } else {
+      if (scroll < scrollPos) {
         setHide(false);
+      } else {
+        setHide(true);
       }
       setScroll(scrollPos);
     };
-    window.onscroll = handleScroll;
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [scroll]);
   const router = useRouter();
   const path = usePathname();

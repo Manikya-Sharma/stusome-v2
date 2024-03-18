@@ -13,11 +13,11 @@ import GetMarkdownInput from "@/components/GetMarkdownInput";
 import Headings from "@/components/Posts/Headings";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Discussion, Post, Reply } from "@/types/post";
-import { Account } from "@/types/user";
+import { Account, ChatAccount } from "@/types/user";
 import { useSession } from "next-auth/react";
 import { notFound, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Pen } from "lucide-react";
+import { MessageCircle, Pen } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -25,6 +25,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import IndeterminateLoader from "@/components/IndeterminateLoader";
+import { getChatId } from "@/lib/utils";
+import toast from "react-hot-toast";
 
 type Params = {
   params: { id: string };
@@ -32,7 +34,7 @@ type Params = {
 
 export default function Page({ params }: Params) {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [loadingExtraData, setLoadingExtraData] = useState<boolean>(true);
 
   // fetching data
@@ -47,6 +49,7 @@ export default function Page({ params }: Params) {
   const [headings, setHeadings] = useState<string[]>([]);
   let author = post && accounts ? accounts.get(post.author) : null;
   useEffect(() => {
+    if (status === "loading") return;
     async function getData() {
       try {
         // get post data
@@ -61,7 +64,11 @@ export default function Page({ params }: Params) {
           notFound();
         }
         if (!post.published) {
-          notFound();
+          if (status === "authenticated") {
+            // TODO: the edit route will handle unauthorized access
+            router.replace(`/post/${id}/edit`);
+          }
+          return notFound();
         }
         setPost(post);
 
@@ -105,7 +112,7 @@ export default function Page({ params }: Params) {
       }
     }
     getData();
-  }, [id, router]);
+  }, [id, router, status]);
 
   useEffect(() => {
     async function fetchAuthorData() {
@@ -262,82 +269,59 @@ export default function Page({ params }: Params) {
     }
   }
 
-  // TODO
-  function validUser(email: string | null | undefined): boolean {
-    if (!email) {
-      return false;
-    }
-    if (post?.author == email) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  // TODO
   async function handleChat() {
-    if (!session || !session.user || !session.user.email) {
+    if (!session || !session.user || !session.user.email || !post) {
       return;
     }
-    const email = session.user.email;
-    // get friends
-    const rawExistingFriends = await fetch("/api/getFriends", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(email),
-    });
-    const rawExistingFriendIds = (await rawExistingFriends.json()) as string[];
-    let existingFriendEmails = rawExistingFriendIds
-      .filter((elem) => elem.includes(email))
-      .map((emailBelonging) =>
-        emailBelonging
-          .split(":")
-          .filter((email) => email != email && email != "friend"),
-      );
-    const existingFriends: Account[] = [];
-
-    const promises = existingFriendEmails.map((email) => {
-      return fetch(`/api/getAccountByEmail/${email[0]}`)
-        .then((rawData) => rawData.json())
-        .then((data) => {
-          existingFriends.push(data);
-        })
-        .catch((error) => console.log(`Error fetching friends data: ${error}`));
-    });
-
-    let friends: Array<Account> = [];
-    Promise.all(promises)
-      .then(() => {
-        friends = existingFriends.filter((elem) => elem != null);
-      })
-      .catch((error) => console.log(`Error occurred: ${error}`));
-
-    const friendsEmails = friends.map((friend) => friend.email);
-    if (author == null) {
+    setLoadingExtraData(true);
+    const rawAccount = await fetch(
+      `/api/chat/user?email=${session.user.email}`,
+    );
+    const rawAccount2 = await fetch(`/api/chat/user?email=${post.author}`);
+    if (!rawAccount.ok) {
+      toast.error("You have not opted in for chats yet!");
+      setLoadingExtraData(false);
       return;
     }
-    if (friendsEmails.includes(author.email)) {
-      router.push(`/chat/${author.email}`);
-    } else {
-      // we need to create a new friend
-      const rawFriendAccount = await fetch(
-        `/api/getAccountByEmail/${author.email}`,
-      );
-      const friendAccount = (await rawFriendAccount.json()) as Account;
-      await fetch("/api/addFriend", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userEmail: email,
-          friendEmail: friendAccount.email,
-        }),
-      });
-      router.push(`/chat/${author.email}`);
+    if (!rawAccount2.ok) {
+      toast.error("The post author does not accept chats");
+      setLoadingExtraData(false);
+      return;
     }
+
+    const sender_account = (await rawAccount.json()) as ChatAccount;
+    const receiver_account = (await rawAccount2.json()) as ChatAccount;
+
+    if (sender_account)
+      if (
+        sender_account.chats.includes(receiver_account.email) &&
+        receiver_account.chats.includes(sender_account.email)
+      ) {
+        // if user is already a friend
+        router.push(
+          `/mychat/${getChatId(sender_account.email, receiver_account.email)}`,
+        );
+      } else {
+        // send a request
+        try {
+          await fetch("/api/chat/request", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from: session.user.email,
+              to: post.author,
+            }),
+          });
+          toast.success(
+            "Sent a chat request, you will be able to chat once the author approves",
+          );
+        } catch (e) {
+          toast.error("Could not begin your chat with author");
+        }
+      }
+    setLoadingExtraData(false);
   }
   // menu for small screens
   const [openMenu, setOpenMenu] = useState<boolean>(false);
@@ -346,7 +330,7 @@ export default function Page({ params }: Params) {
     <Skeleton />
   ) : (
     <div className="min-h-screen">
-      <IndeterminateLoader loading={loadingExtraData} color="white" />
+      <IndeterminateLoader loading={loadingExtraData} />
       <div className="scroll-smooth p-4 transition-colors duration-200">
         <nav className="fixed left-2 top-2 z-[100] flex h-fit max-h-[50px] items-center justify-start rounded-lg backdrop-blur-md">
           <div className="py-1 pl-3 md:hidden">
@@ -371,6 +355,25 @@ export default function Page({ params }: Params) {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Edit the post</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          {post.author != session?.user?.email && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={"ghost"}
+                    onClick={() => {
+                      handleChat();
+                    }}
+                  >
+                    <MessageCircle />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Chat with author</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

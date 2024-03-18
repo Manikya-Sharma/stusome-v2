@@ -1,10 +1,10 @@
 import Link from "next/link";
 import Tile from "@/components/Settings/Tile";
-import SyncTile from "@/components/Settings/SyncTile";
 
 export default function AccountSettings() {
   return (
     <div className="px-8 pt-10">
+      <h1 className="mb-10 text-center text-5xl">Account Settings</h1>
       <Link href={`/settings/account/changePicture`}>
         <Tile
           description="Change Profile Picture"
@@ -15,7 +15,6 @@ export default function AccountSettings() {
       <Link href={`/settings/account/changeUsername`}>
         <Tile description="Change Display Name" type="normal" logo="rename" />
       </Link>
-      <SyncTile />
     </div>
   );
 }

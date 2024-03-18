@@ -3,6 +3,7 @@
 import Answer from "@/components/Doubts/Answer";
 import MainQuestion from "@/components/Doubts/MainQuestion";
 import GetMarkdownInput from "@/components/GetMarkdownInput";
+import IndeterminateLoader from "@/components/IndeterminateLoader";
 import { Account } from "@/types/user";
 import { useSession } from "next-auth/react";
 import { notFound } from "next/navigation";
@@ -208,86 +209,76 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
 
   return (
     <main>
-      {loading ? (
-        // <DoubtLoading />
-        <div></div>
-      ) : (
-        <>
-          <nav className="bg-black p-4 text-white dark:bg-slate-950">
-            <div className="text-center">
-              <h1 className="mb-3 text-2xl font-bold md:text-5xl">
-                {data?.title}
-              </h1>
-              <div className="mx-auto flex w-fit max-w-[80%] flex-wrap items-center justify-center">
-                {data &&
-                  data.tags.map((tag) => {
-                    return (
-                      <p
-                        key={tag}
-                        className="mx-1 block w-fit rounded-xl bg-slate-300 px-2 py-1 text-xs text-slate-700 md:text-sm dark:bg-slate-800 dark:text-slate-200"
-                      >
-                        {tag}
-                      </p>
-                    );
-                  })}
-              </div>
-            </div>
-          </nav>
-          <div className="px-4 sm:px-8">
-            {data && accounts && (
-              <MainQuestion
-                author={accounts.get(data.author)}
-                content={data.content}
-              />
-            )}
-
-            {/* <!-- Doubts Section --> */}
-
+      <nav className="bg-black p-4 text-white dark:bg-slate-950">
+        <IndeterminateLoader loading={loading} />
+        <div className="text-center">
+          <h1 className="mb-3 text-2xl font-bold md:text-5xl">{data?.title}</h1>
+          <div className="mx-auto flex w-fit max-w-[80%] flex-wrap items-center justify-center">
             {data &&
-              accounts &&
-              answers &&
-              replies &&
-              answers.map((answer) => {
+              data.tags.map((tag) => {
                 return (
-                  <div key={answer.id}>
-                    <Answer
-                      key={answer.id}
-                      author={accounts.get(answer.author)}
-                      content={answer.content}
-                      replies={
-                        replies &&
-                        replies.filter((reply) =>
-                          answer.replies.includes(reply.id),
-                        )
-                      }
-                      authors={accounts}
-                    />
-                    <div className="text-right lg:mr-10">
-                      <GetMarkdownInput
-                        role="minor"
-                        minorId={answer.id}
-                        onUpload={postNewReply}
-                        triggerMessage="Reply"
-                        header="Replying to an answer"
-                        markdown
-                      />
-                    </div>
-                  </div>
+                  <p
+                    key={tag}
+                    className="mx-1 block w-fit rounded-xl bg-slate-300 px-2 py-1 text-xs text-slate-700 md:text-sm dark:bg-slate-800 dark:text-slate-200"
+                  >
+                    {tag}
+                  </p>
                 );
               })}
-
-            <div className="mx-auto my-5 w-fit">
-              <GetMarkdownInput
-                onUpload={postNewAnswer}
-                role="major"
-                triggerMessage="New Answer"
-                header="Posting new answer"
-                markdown
-              />
-            </div>
           </div>
-        </>
-      )}
+        </div>
+      </nav>
+      <div className="px-4 sm:px-8">
+        {data && accounts && (
+          <MainQuestion
+            author={accounts.get(data.author)}
+            content={data.content}
+          />
+        )}
+
+        {/* <!-- Doubts Section --> */}
+
+        {data &&
+          accounts &&
+          answers &&
+          replies &&
+          answers.map((answer) => {
+            return (
+              <div key={answer.id}>
+                <Answer
+                  key={answer.id}
+                  author={accounts.get(answer.author)}
+                  content={answer.content}
+                  replies={
+                    replies &&
+                    replies.filter((reply) => answer.replies.includes(reply.id))
+                  }
+                  authors={accounts}
+                />
+                <div className="text-right lg:mr-10">
+                  <GetMarkdownInput
+                    role="minor"
+                    minorId={answer.id}
+                    onUpload={postNewReply}
+                    triggerMessage="Reply"
+                    header="Replying to an answer"
+                    markdown
+                  />
+                </div>
+              </div>
+            );
+          })}
+
+        <div className="mx-auto my-5 w-fit">
+          <GetMarkdownInput
+            onUpload={postNewAnswer}
+            role="major"
+            triggerMessage="New Answer"
+            header="Posting new answer"
+            markdown
+          />
+        </div>
+      </div>
     </main>
   );
 }

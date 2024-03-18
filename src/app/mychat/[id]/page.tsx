@@ -50,9 +50,6 @@ export default function Page({ params }: { params: { id: string } }) {
     // get friend account
     async function getData() {
       if (!session?.user?.email) return;
-      console.log(
-        `/api/chat/user?email=${from_user_is_me ? to_user : from_user}`,
-      );
       const rawAccount = await fetch(
         `/api/chat/user?email=${from_user_is_me ? to_user : from_user}`,
       );

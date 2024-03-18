@@ -73,7 +73,7 @@ const Page = () => {
     </div>
   ) : (
     <div className="flex h-[90vh] w-full flex-col items-center justify-center gap-10 px-10">
-      <h1 className="text-center text-5xl">You have not opted in for Chats</h1>
+      <h1 className="text-center text-5xl">You have not opted in for chats</h1>
       <Button className="text-xl" onClick={optIn}>
         Opt in for chats
       </Button>

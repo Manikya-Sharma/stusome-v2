@@ -15,7 +15,9 @@ export async function GET(req: NextRequest) {
   const email = req.nextUrl.searchParams.get("email");
   const user = (await db.get(`user:${email}`)) as string;
   if (!user) {
-    throw new Error("No such user found");
+    return new NextResponse("User not found", {
+      status: 404,
+    });
   }
   return NextResponse.json(user);
 }

@@ -19,7 +19,7 @@ export default function Tile(props: Props) {
   return (
     <section
       className={cn(
-        "mx-auto my-3 flex w-[90%] min-w-fit cursor-pointer justify-between rounded-lg border px-3  py-5 font-[450] transition-all duration-200 sm:w-full ",
+        "mx-auto my-3 flex w-[90%] min-w-fit cursor-pointer justify-between rounded-lg border px-3 py-5 font-[450] transition-all duration-200 sm:w-[80%]",
         {
           "bg-slate-200 text-slate-700 hover:bg-slate-100 hover:text-black dark:border-slate-700 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600 dark:hover:text-slate-200":
             props.type == "normal",

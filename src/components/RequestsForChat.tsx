@@ -62,6 +62,12 @@ const RequestsForChat = () => {
     getRequests();
   }, [session?.user?.email]);
 
+  // remove duplicates
+  useEffect(() => {
+    setReceived(received.filter((item, pos) => received.indexOf(item) == pos));
+    setSent(sent.filter((item, pos) => sent.indexOf(item) == pos));
+  }, [received, sent]);
+
   const reqRef = useRef<HTMLInputElement | null>(null);
   const sendRequest = async () => {
     if (!reqRef || !reqRef.current || !session?.user?.email) {
