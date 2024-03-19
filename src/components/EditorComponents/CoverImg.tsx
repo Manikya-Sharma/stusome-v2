@@ -15,19 +15,27 @@ import {
 } from "../ui/dialog";
 import UnsplashImageSelector from "./UnsplashImageSelector";
 
-const CoverImg = ({ init }: { init: string }) => {
+const CoverImg = ({
+  init,
+  setCoverImage,
+}: {
+  init: string;
+  setCoverImage: Function;
+}) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [image, setImage] = useState<string | null>(null);
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.value = init;
       setImage(init);
+      setCoverImage(init);
     }
-  }, [init]);
+  }, [init, setCoverImage]);
   function setCover(url: string) {
     if (inputRef && inputRef.current) {
       inputRef.current.value = url;
       setImage(url);
+      setCoverImage(url);
     }
   }
   return (

@@ -32,7 +32,10 @@ const Editor = ({
         <Tags changeTags={changeTags} init={state.tags ?? []} />
       </div>
       <div className="mt-10">
-        <CoverImg init={state.coverImgFull ?? ""} />
+        <CoverImg
+          init={state.coverImgFull ?? ""}
+          setCoverImage={changeCoverImg}
+        />
       </div>
     </div>
   );

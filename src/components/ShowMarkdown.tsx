@@ -3,11 +3,14 @@
 import Markdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import remarkMath from "remark-math";
+import remarkGfm from "remark-gfm";
 import rehypeKatex from "rehype-katex";
+import rehypeRaw from "rehype-raw";
 import hljs from "highlight.js";
 import "katex/dist/katex.min.css";
 import "highlight.js/styles/tomorrow-night-blue.css";
 import { useEffect } from "react";
+import Script from "next/script";
 
 <link
   rel="stylesheet"
@@ -28,18 +31,30 @@ export default function ShowMarkdown(props: Props) {
     return currentId;
   };
   return (
-    <Markdown
-      remarkPlugins={[remarkMath]}
-      rehypePlugins={[rehypeKatex, rehypeHighlight]}
-      components={{
-        h1({ node, ...props }) {
-          return <h2 id={generateId().toString()} {...props}></h2>;
-        },
-        h2: "h3",
-        h3: "h4",
-      }}
-    >
-      {props.data}
-    </Markdown>
+    <>
+      <Script
+        id="mermaid"
+        type="module"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@9/dist/mermaid.esm.min.mjs";
+        mermaid.initialize({startOnLoad: true});
+        mermaid.contentLoaded();`,
+        }}
+      />
+      <Markdown
+        remarkPlugins={[remarkMath, remarkGfm]}
+        rehypePlugins={[rehypeKatex, rehypeHighlight, rehypeRaw]}
+        components={{
+          h1({ node, ...props }) {
+            return <h2 id={generateId().toString()} {...props}></h2>;
+          },
+          h2: "h3",
+          h3: "h4",
+        }}
+      >
+        {props.data}
+      </Markdown>
+    </>
   );
 }

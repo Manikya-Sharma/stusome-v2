@@ -98,6 +98,18 @@
     border-radius: 5px;
   }
 
+  pre.mermaid {
+    background-color: white;
+    display: block;
+    width: 100%;
+  }
+
+  pre.mermaid > * {
+    max-width: 80vw;
+    min-width: 50vw;
+    margin: 0 auto;
+  }
+
   .dark *::-webkit-scrollbar-thumb {
     background-color: rgba(50, 50, 50, 0.8);
   }
