@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 import { Github, Loader2 } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
-import { useSession } from "next-auth/react";
 interface Props {
   provider: "github" | "google" | "discord";
 }
@@ -15,10 +14,10 @@ const Tile = ({ provider }: Props) => {
     const load = await signIn(via);
     if (load?.ok) {
       setLoading(false);
+      localStorage.setItem("logged-in", "true");
     }
   }
 
-  const { data: session } = useSession();
   return (
     <div
       className={cn(

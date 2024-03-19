@@ -2,8 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ReactNode } from "react";
-import PageLoading from "../miscelleneous/PageLoading";
+import { ReactNode, useEffect } from "react";
 
 interface SessionRedirectProps {
   children: ReactNode;
@@ -20,20 +19,22 @@ const SessionRedirect = ({
   ...props
 }: SessionRedirectProps) => {
   const router = useRouter();
-
   const { status } = useSession();
 
+  useEffect(() => {
+    // direct loading to explore page
+    if (to != "/explore") return;
+    if (localStorage.getItem("logged-in") === "true") {
+      router.replace("/explore");
+    }
+  }, [router, to]);
+
+  // if local-storage does'nt contain logged-in somehow
   if (status === when) {
     router.replace(to);
   }
 
-  return (
-    <div {...props}>
-      {status !== when && status != notwhen && <PageLoading />}
-
-      {children}
-    </div>
-  );
+  return <div {...props}>{children}</div>;
 };
 
 export default SessionRedirect;
