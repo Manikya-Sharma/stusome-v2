@@ -52,7 +52,6 @@ const App = ({ params }: Params) => {
         if (post.author !== session?.user?.email) {
           throw new Error("Unauthorized Access");
         }
-        console.log("Fetched media", post.media);
         setFormState({
           content: post.content,
           title: post.title,

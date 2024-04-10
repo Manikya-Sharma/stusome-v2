@@ -37,52 +37,53 @@ export default function DisplayMedia({
   }, [mediaIds, data]);
   return (
     <div className="relative flex flex-col items-center justify-center gap-2 space-y-2 md:mx-auto md:block md:w-fit">
-      {data.map((row) => {
-        if (row.media_type.match("image/*")) {
-          return (
-            <div
-              key={row.id}
-              className="relative aspect-video"
-              style={{ width: width < 768 ? width - 100 : width / 5 }}
-            >
-              <Image
-                src={`data:${row.media_type};base64,${row.datas}`}
-                alt=""
-                fill
-                className="aspect-square rounded-md"
-              />
-            </div>
-          );
-        } else if (row.media_type.match("video/*")) {
-          return (
-            <div key={row.id}>
-              <video
-                src={`data:${row.media_type};base64,${row.datas}`}
-                controls
-                width={width < 768 ? width - 100 : width / 5}
-                className="aspect-video rounded-lg"
+      {data.length != 0 &&
+        data.map((row) => {
+          if (row.media_type.match("image/*")) {
+            return (
+              <div
+                key={row.id}
+                className="relative aspect-video"
+                style={{ width: width < 768 ? width - 100 : width / 5 }}
               >
-                Videos not supported
-              </video>
-            </div>
-          );
-        } else if (row.media_type.match("application/pdf")) {
-          return (
-            <div key={row.id}>
-              <object
-                width={width < 768 ? width - 100 : width / 5}
-                height={width < 768 ? width - 100 : width / 5}
-                data={`data:${row.media_type};base64,${row.datas}`}
-              >
-                <embed
+                <Image
                   src={`data:${row.media_type};base64,${row.datas}`}
-                  type="application/pdf"
+                  alt=""
+                  fill
+                  className="aspect-square rounded-md"
                 />
-              </object>
-            </div>
-          );
-        }
-      })}
+              </div>
+            );
+          } else if (row.media_type.match("video/*")) {
+            return (
+              <div key={row.id}>
+                <video
+                  src={`data:${row.media_type};base64,${row.datas}`}
+                  controls
+                  width={width < 768 ? width - 100 : width / 5}
+                  className="aspect-video rounded-lg"
+                >
+                  Videos not supported
+                </video>
+              </div>
+            );
+          } else if (row.media_type.match("application/pdf")) {
+            return (
+              <div key={row.id}>
+                <object
+                  width={width < 768 ? width - 100 : width / 5}
+                  height={width < 768 ? width - 100 : width / 5}
+                  data={`data:${row.media_type};base64,${row.datas}`}
+                >
+                  <embed
+                    src={`data:${row.media_type};base64,${row.datas}`}
+                    type="application/pdf"
+                  />
+                </object>
+              </div>
+            );
+          }
+        })}
     </div>
   );
 }
