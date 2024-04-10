@@ -13,6 +13,7 @@ export const postSchema = z.object({
     .min(1, "content should not be empty"),
   tags: z.array(z.string()),
   coverImgFull: z.string().url({ message: "Invalid url for 3rd party image" }),
+  media: z.array(z.string()),
 });
 
 export const doubtSchema = z.object({

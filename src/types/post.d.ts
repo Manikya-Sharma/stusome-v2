@@ -7,6 +7,7 @@ export type Post = {
   tags: Array<string>;
   coverImgFull: string;
   published: boolean;
+  media: Array<string>;
 };
 
 export type Discussion = {

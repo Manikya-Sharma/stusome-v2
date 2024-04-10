@@ -82,6 +82,7 @@ const Page = () => {
         published: false,
         tags: [],
         title: "",
+        media: [],
       };
       try {
         await fetch("/api/posts", {

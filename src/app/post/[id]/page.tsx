@@ -27,6 +27,7 @@ import {
 import IndeterminateLoader from "@/components/IndeterminateLoader";
 import { getChatId } from "@/lib/utils";
 import toast from "react-hot-toast";
+import DisplayMedia from "@/components/DisplayMedia";
 
 type Params = {
   params: { id: string };
@@ -45,6 +46,7 @@ export default function Page({ params }: Params) {
     null,
   );
   const [replies, setReplies] = useState<Array<Reply> | null>(null);
+  const [media, setMedia] = useState<Array<string>>([]);
   const loading = post === null;
   const [headings, setHeadings] = useState<string[]>([]);
   let author = post && accounts ? accounts.get(post.author) : null;
@@ -106,6 +108,24 @@ export default function Page({ params }: Params) {
           rawReplies.map((ans) => ans.json()),
         )) as Array<Reply>;
         setReplies(parsedReplies);
+
+        // get media
+        const mediaIds = post.media;
+        const mediaRequests = mediaIds.map((request) => {
+          return fetch(`/api/multimedia?id=${request}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+        });
+
+        const rawMedia = await Promise.all(mediaRequests);
+        const parsedMedia = (await Promise.all(
+          rawMedia.map((ans) => ans.json()),
+        )) as Array<string>;
+        setMedia(parsedMedia);
+
         setLoadingExtraData(false);
       } catch (e) {
         console.log(`Error: ${e}`);
@@ -420,6 +440,14 @@ export default function Page({ params }: Params) {
                   </div>
                 );
               })}
+            </div>
+            <div>
+              {post.media.length != 0 && <h2 className="text-2xl">Media</h2>}
+              {post.media.length === 0 ? (
+                ""
+              ) : (
+                <DisplayMedia mediaIds={post.media} />
+              )}
             </div>
           </div>
         </div>

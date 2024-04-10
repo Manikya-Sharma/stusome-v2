@@ -10,6 +10,8 @@ import { Post } from "@/types/post";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import IndeterminateLoader from "@/components/IndeterminateLoader";
+import Media from "@/components/Media";
+import DisplayMedia from "@/components/DisplayMedia";
 
 type formType = z.infer<typeof postSchema>;
 
@@ -30,6 +32,7 @@ const App = ({ params }: Params) => {
     title: "",
     coverImgFull: "",
     tags: [],
+    media: [],
   });
 
   // fetch data
@@ -49,11 +52,13 @@ const App = ({ params }: Params) => {
         if (post.author !== session?.user?.email) {
           throw new Error("Unauthorized Access");
         }
+        console.log("Fetched media", post.media);
         setFormState({
           content: post.content,
           title: post.title,
           coverImgFull: post.coverImgFull,
           tags: post.tags,
+          media: post.media,
         });
       } catch (e) {
         console.log("An error ocurred in loading data:", e);
@@ -82,6 +87,9 @@ const App = ({ params }: Params) => {
   }
   function changeTags(newTags: Array<string>) {
     formState.tags = newTags;
+  }
+  function changeMedia(newMedia: string) {
+    formState.media.push(newMedia);
   }
 
   function validate() {
@@ -165,6 +173,8 @@ const App = ({ params }: Params) => {
         changeCoverImg={changeCoverImg}
         changeTags={changeTags}
       />
+      {formState.media.length === 0 ? "" : <Media changeMedia={changeMedia} />}
+      <DisplayMedia mediaIds={formState.media} />
       <div className="flex items-center justify-center gap-4">
         <Button
           className="my-10 block text-2xl"
