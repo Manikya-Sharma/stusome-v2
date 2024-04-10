@@ -173,7 +173,7 @@ const App = ({ params }: Params) => {
         changeCoverImg={changeCoverImg}
         changeTags={changeTags}
       />
-      {formState.media.length === 0 ? "" : <Media changeMedia={changeMedia} />}
+      <Media changeMedia={changeMedia} />
       <DisplayMedia mediaIds={formState.media} />
       <div className="flex items-center justify-center gap-4">
         <Button
