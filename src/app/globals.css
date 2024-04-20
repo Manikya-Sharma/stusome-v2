@@ -210,4 +210,8 @@
   .dark .markdown-wrapper a:hover {
     background-color: rgba(100, 100, 220, 0.7);
   }
+
+  .markdown-wrapper img {
+    @apply mx-auto my-5 w-full max-w-prose rounded-lg;
+  }
 }
