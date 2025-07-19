@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { Loader2, LogIn } from "lucide-react";
+import { LayoutDashboard, Loader2, LogIn } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -38,20 +38,29 @@ export default function Navbar() {
         </div>
       </Link>
       <div className="flex items-center gap-2">
-        {path !== "/login" && status !== "authenticated" && (
-          <Button
-            className="text-sm"
-            onClick={() => router.push(`/login?from=${path}`)}
-            disabled={status === "loading"}
-          >
-            <span className="hidden sm:block">Login</span>
-            {status === "loading" ? (
-              <Loader2 className="h-4 w-4 animate-spin sm:ml-2" />
-            ) : (
-              <LogIn className="h-4 w-4 sm:ml-2" />
-            )}
-          </Button>
-        )}
+        {path !== "/login" &&
+          (status !== "authenticated" ? (
+            <Button
+              className="text-sm"
+              onClick={() => router.push(`/login?from=${path}`)}
+              disabled={status === "loading"}
+            >
+              <span className="hidden sm:block">Login</span>
+              {status === "loading" ? (
+                <Loader2 className="h-4 w-4 animate-spin sm:ml-2" />
+              ) : (
+                <LogIn className="h-4 w-4 sm:ml-2" />
+              )}
+            </Button>
+          ) : path !== "/dashboard" ? (
+            <Button
+              className="text-sm"
+              onClick={() => router.push(`/dashboard`)}
+            >
+              <span className="hidden sm:block">Dashboard</span>
+              <LayoutDashboard className="h-4 w-4 sm:ml-2" />
+            </Button>
+          ) : null)}
         <ThemeSwitch />
       </div>
     </nav>
