@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 import { useSession } from "next-auth/react";
 import { v4 as uuid } from "uuid";
 import { useRouter } from "next/navigation";
-import { Account } from "@/types/user";
+import { useGetAccount, usePutAccount } from "@/components/queries/account";
 
 type formType = z.infer<typeof doubtSchema>;
 
@@ -20,6 +20,11 @@ const App = () => {
     content: "",
     title: "",
     tags: [],
+  });
+
+  const { data: account } = useGetAccount({ email: session?.user?.email });
+  const { mutate: updateAccount } = usePutAccount({
+    email: session?.user?.email,
   });
 
   function changeContent(newContent: string) {
@@ -59,18 +64,11 @@ const App = () => {
           },
           body: JSON.stringify(doubt),
         });
-        const rawAccount = await fetch(
-          `/api/accounts?email=${session.user.email}`,
-        );
-        const account = (await rawAccount.json()) as Account;
-        const old_doubts = account.doubts;
-        const new_doubts = [...old_doubts, newId];
-        await fetch(`/api/accounts?email=${session.user.email}&field=doubts`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ doubts: new_doubts }),
+        const old_doubts = account?.doubts;
+        const new_doubts = [...(old_doubts ?? []), newId];
+        updateAccount({
+          field: "doubts",
+          newAccount: { doubts: new_doubts },
         });
         router.replace(`/doubt/${newId}`);
       } catch (e) {

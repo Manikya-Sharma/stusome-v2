@@ -5,6 +5,7 @@ import NextAuthProvider from "../components/auth/GlobalAuth";
 import { ThemeProvider, useTheme } from "@/context/themeContext";
 import { cn } from "@/lib/utils";
 import { Inter } from "next/font/google";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,13 +21,17 @@ function WithTheme({ children }: { children: React.ReactNode }) {
   );
 }
 
+const queryClient = new QueryClient();
+
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <>
       <NextAuthProvider>
-        <ThemeProvider>
-          <WithTheme>{children}</WithTheme>
-        </ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <WithTheme>{children}</WithTheme>
+          </ThemeProvider>
+        </QueryClientProvider>
       </NextAuthProvider>
     </>
   );

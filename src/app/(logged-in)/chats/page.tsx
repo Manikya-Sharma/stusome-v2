@@ -1,40 +1,34 @@
 "use client";
 
+import { useGetAccount } from "@/components/queries/account";
 import RecentChats from "@/components/RecentChats";
 import RequestsForChat from "@/components/RequestsForChat";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Account, ChatAccount } from "@/types/user";
+import { ChatAccount } from "@/types/user";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+
 const Page = () => {
   const { data: session, status } = useSession();
   const [recentChats, setRecentChats] = useState<Array<string>>([]);
   const [isChatUser, setIsChatUser] = useState<boolean>(false);
+  const { data: account } = useGetAccount({ email: session?.user?.email });
   async function optIn() {
     if (status == "unauthenticated" || !session?.user?.email) {
       toast.error("It seems you aren't logged in");
       return;
     }
-    const rawAccount = await fetch(
-      `/api/accounts?email=${session.user.email}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        cache: "force-cache",
-      },
-    );
-    const account = (await rawAccount.json()) as Account;
-    const chatAccount: ChatAccount = {
-      chats: [],
-      email: account.email,
-      image: account.image,
-      image_third_party: account.image_third_party,
-      name: account.name,
-    };
+    const chatAccount: ChatAccount | undefined = account
+      ? {
+          chats: [],
+          email: account.email,
+          image: account.image,
+          image_third_party: account.image_third_party,
+          name: account.name,
+        }
+      : undefined;
     await fetch("/api/chat/user", {
       method: "POST",
       headers: {

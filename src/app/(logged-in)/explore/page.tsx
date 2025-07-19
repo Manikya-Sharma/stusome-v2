@@ -7,18 +7,17 @@ import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Post } from "@/types/post";
-import { Account } from "@/types/user";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useGetAccounts } from "@/components/queries/account";
+import { uniq as _uniq } from "lodash";
 
 const Page = () => {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-
   const [posts, setPosts] = useState<Array<Post>>([]);
   const [doubts, setDoubts] = useState<Array<Doubt>>([]);
-  const [authors, setAuthors] = useState<Map<string, string> | null>(null);
+  const [authors, setAuthors] = useState<Map<
+    string,
+    string | undefined
+  > | null>(null);
 
   const results: Array<Post | Doubt> = [];
 
@@ -72,49 +71,28 @@ const Page = () => {
     fetchData();
   }, []);
 
+  const map: Map<string, string> = new Map();
+  const emails = _uniq([
+    ...posts
+      .filter((post) => post.published && !map.has(post.author))
+      .map((post) => post.author),
+    ...doubts
+      .filter((doubt) => !map.has(doubt.author))
+      .map((doubt) => doubt.author),
+  ]);
+  const _authors = useGetAccounts({
+    emails,
+  });
+
   useEffect(() => {
-    async function getAuthors(posts: Array<Post>, doubts: Array<Doubt>) {
-      if (posts.length == 0) {
-        return;
-      }
-      const map: Map<string, string> = new Map();
-      for (const post of posts.filter((post) => post.published)) {
-        if (map.has(post.author)) continue;
-        const rawAuthor = await fetch(`/api/accounts?email=${post.author}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          cache: "force-cache",
-        });
-        const author = (await rawAuthor.json()) as Account;
-
-        setAuthors((authors) => {
-          const new_authors = new Map(authors);
-          new_authors?.set(post.author, author.name);
-          return new_authors;
-        });
-      }
-      for (const doubt of doubts) {
-        if (map.has(doubt.author)) continue;
-        const rawAuthor = await fetch(`/api/accounts?email=${doubt.author}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          cache: "force-cache",
-        });
-        const author = (await rawAuthor.json()) as Account;
-
-        setAuthors((authors) => {
-          const new_authors = new Map(authors);
-          new_authors?.set(doubt.author, author.name);
-          return new_authors;
-        });
-      }
-    }
-    getAuthors(posts, doubts);
-  }, [posts, doubts]);
+    setAuthors((authors) => {
+      const new_authors = new Map(authors);
+      emails.forEach((email, index) =>
+        new_authors.set(email, _authors[index].data?.name),
+      );
+      return new_authors;
+    });
+  }, []);
 
   // if (status === "unauthenticated") {
   //   router.replace("/login");

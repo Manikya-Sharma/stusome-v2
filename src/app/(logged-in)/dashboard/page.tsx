@@ -6,15 +6,19 @@ import { v4 as uuid } from "uuid";
 import toast from "react-hot-toast";
 import { Post } from "@/types/post";
 import { useEffect, useState } from "react";
-import { Account } from "@/types/user";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import IndeterminateLoader from "@/components/IndeterminateLoader";
+import { useGetAccount, usePutAccount } from "@/components/queries/account";
 
 const Page = () => {
   const { data: session, status } = useSession();
-  const [account, setAccount] = useState<Account | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+
+  const { data: account } = useGetAccount({ email: session?.user?.email });
+  const { mutate: updateAccount } = usePutAccount({
+    email: session?.user?.email,
+  });
 
   const router = useRouter();
 
@@ -24,18 +28,6 @@ const Page = () => {
 
   const [posts, setPosts] = useState<Array<Post>>([]);
   const [doubts, setDoubts] = useState<Array<Doubt>>([]);
-
-  useEffect(() => {
-    if (!session?.user?.email) return;
-    async function getData() {
-      const rawAccount = await fetch(
-        `/api/accounts?email=${session?.user?.email}`,
-      );
-      const account = (await rawAccount.json()) as Account;
-      setAccount(account);
-    }
-    getData();
-  }, [session?.user?.email]);
 
   useEffect(() => {
     if (account == null) return;
@@ -95,13 +87,7 @@ const Page = () => {
 
         const oldPosts = account.posts;
         const new_posts = [...oldPosts, newId];
-        await fetch(`/api/accounts?email=${account.email}&field=posts`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ posts: new_posts }),
-        });
+        updateAccount({ field: "posts", newAccount: { posts: new_posts } });
         router.push(`/post/${newId}/edit`);
       } catch (e) {
         console.log(`An error occurred: ${e}`);
@@ -135,13 +121,13 @@ const Page = () => {
                 </Button>
               </div>
 
-              <div className="mb-5 mt-3 max-h-[45vh] overflow-y-auto overflow-x-hidden rounded-lg border-2 border-slate-300 px-3 pt-2 lg:flex lg:max-h-full lg:justify-start lg:overflow-x-auto dark:border-slate-800">
+              <div className="mb-5 mt-3 max-h-[45vh] overflow-y-auto overflow-x-hidden rounded-lg border-2 border-slate-300 px-3 pt-2 dark:border-slate-800 lg:flex lg:max-h-full lg:justify-start lg:overflow-x-auto">
                 {posts &&
                   posts.map((post) => {
                     return (
                       <div
                         key={post.id}
-                        className="relative my-5 cursor-pointer overflow-hidden rounded-lg bg-slate-200 p-4 py-5 transition-transform hover:scale-105 lg:mx-3 lg:min-w-[20%] lg:max-w-[40%] lg:flex-1 dark:bg-slate-800"
+                        className="relative my-5 cursor-pointer overflow-hidden rounded-lg bg-slate-200 p-4 py-5 transition-transform hover:scale-105 dark:bg-slate-800 lg:mx-3 lg:min-w-[20%] lg:max-w-[40%] lg:flex-1"
                         onClick={() => router.push(`/post/${post.id}`)}
                       >
                         {post.published == false && (
@@ -179,13 +165,13 @@ const Page = () => {
                 </Button>
               </div>
 
-              <div className="mb-5 mt-3 max-h-[45vh] overflow-y-auto overflow-x-hidden rounded-lg border-2 border-slate-300 px-3 pt-2 lg:flex lg:max-h-full lg:justify-start lg:overflow-x-auto dark:border-slate-800">
+              <div className="mb-5 mt-3 max-h-[45vh] overflow-y-auto overflow-x-hidden rounded-lg border-2 border-slate-300 px-3 pt-2 dark:border-slate-800 lg:flex lg:max-h-full lg:justify-start lg:overflow-x-auto">
                 {doubts &&
                   doubts.map((doubt) => {
                     return (
                       <div
                         key={doubt.id}
-                        className="my-5 cursor-pointer overflow-hidden rounded-lg bg-slate-200 p-4 py-5 transition-transform hover:scale-105 lg:mx-3 lg:min-w-[20%] lg:max-w-[40%] lg:flex-1 dark:bg-slate-800"
+                        className="my-5 cursor-pointer overflow-hidden rounded-lg bg-slate-200 p-4 py-5 transition-transform hover:scale-105 dark:bg-slate-800 lg:mx-3 lg:min-w-[20%] lg:max-w-[40%] lg:flex-1"
                         onClick={() => router.push(`/doubt/${doubt.id}`)}
                       >
                         <h3 className="mb-2 text-xl font-semibold">

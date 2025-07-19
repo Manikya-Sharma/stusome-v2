@@ -9,6 +9,8 @@ import { useSession } from "next-auth/react";
 import { notFound } from "next/navigation";
 import { useEffect, useState } from "react";
 import { v4 as uuid } from "uuid";
+import { uniq as _uniq } from "lodash";
+import { useGetAccounts } from "@/components/queries/account";
 
 export default function Doubt({ params: { id } }: { params: { id: string } }) {
   const { data: session } = useSession();
@@ -66,11 +68,10 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
       id: uuid(),
     };
 
-    const answer_replies = replies?.filter(
-      (reply) =>
-        answers
-          ?.filter((ans) => ans.id == answerId)[0]
-          .replies.includes(reply.id),
+    const answer_replies = replies?.filter((reply) =>
+      answers
+        ?.filter((ans) => ans.id == answerId)[0]
+        .replies.includes(reply.id),
     );
     const new_replies = answer_replies ? [...answer_replies, reply] : [reply];
 
@@ -171,40 +172,21 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
     getData();
   }, [id]);
 
+  const emails: Array<string> = _uniq(
+    [
+      ...(answers ?? []).map((answer) => answer.author),
+      ...(replies ?? []).map((reply) => reply.author),
+    ].concat(data?.author ? [data.author] : []),
+  );
+
+  const authors = useGetAccounts({ emails });
+
   useEffect(() => {
-    async function fetchAuthorData() {
-      const authors: Map<string, Account> = new Map();
-      if (!data || !answers || !replies) {
-        return;
-      }
-
-      const emails: Array<string> = [
-        ...answers.map((answer) => answer.author),
-        ...replies.map((reply) => reply.author),
-        data.author,
-      ];
-
-      const promises = emails.map((email) =>
-        fetch(`/api/accounts?email=${email}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }),
-      );
-
-      const rawResponses = await Promise.all(promises);
-      const responses = await Promise.all(
-        rawResponses.map((response) => response.json()),
-      );
-
-      responses.map((value, index) => {
-        authors.set(emails[index], value);
-      });
-      setAccounts(authors);
-    }
-    // get authors
-    fetchAuthorData();
+    const newAuthors = new Map();
+    authors.map((value, index) => {
+      newAuthors.set(emails[index], value);
+    });
+    setAccounts(newAuthors);
   }, [id, answers, data, replies]);
 
   return (
@@ -219,7 +201,7 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
                 return (
                   <p
                     key={tag}
-                    className="mx-1 block w-fit rounded-xl bg-slate-300 px-2 py-1 text-xs text-slate-700 md:text-sm dark:bg-slate-800 dark:text-slate-200"
+                    className="mx-1 block w-fit rounded-xl bg-slate-300 px-2 py-1 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200 md:text-sm"
                   >
                     {tag}
                   </p>

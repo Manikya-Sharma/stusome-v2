@@ -29,6 +29,9 @@ import { getChatId } from "@/lib/utils";
 import toast from "react-hot-toast";
 import DisplayMedia from "@/components/DisplayMedia";
 
+import { uniq as _uniq } from "lodash";
+import { useGetAccounts } from "@/components/queries/account";
+
 type Params = {
   params: { id: string };
 };
@@ -36,7 +39,6 @@ type Params = {
 export default function Page({ params }: Params) {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [loadingExtraData, setLoadingExtraData] = useState<boolean>(true);
 
   // fetching data
   const id = params.id;
@@ -45,6 +47,7 @@ export default function Page({ params }: Params) {
   const [discussions, setDiscussions] = useState<Array<Discussion> | null>(
     null,
   );
+  const [extraLoader, setExtraLoader] = useState<boolean>(true);
   const [replies, setReplies] = useState<Array<Reply> | null>(null);
   const [media, setMedia] = useState<Array<string>>([]);
   const loading = post === null;
@@ -125,8 +128,7 @@ export default function Page({ params }: Params) {
           rawMedia.map((ans) => ans.json()),
         )) as Array<string>;
         setMedia(parsedMedia);
-
-        setLoadingExtraData(false);
+        setExtraLoader(false);
       } catch (e) {
         console.log(`Error: ${e}`);
       }
@@ -134,42 +136,22 @@ export default function Page({ params }: Params) {
     getData();
   }, [id, router, status]);
 
+  const emails: Array<string> = _uniq(
+    [
+      ...(discussions ?? []).map((discussion) => discussion.author),
+      ...(replies ?? []).map((reply) => reply.author),
+    ].concat(post?.author ? [post?.author] : []),
+  );
+
+  const authors = useGetAccounts({ emails });
+  const loadingExtraData = authors.some((val) => val.isLoading);
+
   useEffect(() => {
-    async function fetchAuthorData() {
-      setLoadingExtraData(true);
-      const authors: Map<string, Account> = new Map();
-      if (!post || !replies || !discussions) {
-        return;
-      }
-
-      const emails: Array<string> = [
-        ...discussions.map((discussion) => discussion.author),
-        ...replies.map((reply) => reply.author),
-        post.author,
-      ];
-
-      const promises = emails.map((email) =>
-        fetch(`/api/accounts?email=${email}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }),
-      );
-
-      const rawResponses = await Promise.all(promises);
-      const responses = await Promise.all(
-        rawResponses.map((response) => response.json()),
-      );
-
-      responses.map((value, index) => {
-        authors.set(emails[index], value);
-      });
-      setAccounts(authors);
-      setLoadingExtraData(false);
-    }
-    // get authors
-    fetchAuthorData();
+    const newMap = new Map();
+    authors.map((value, index) => {
+      newMap.set(emails[index], value);
+    });
+    setAccounts(newMap);
   }, [id, discussions, post, replies]);
 
   // finding headings from data
@@ -187,7 +169,7 @@ export default function Page({ params }: Params) {
   // post new discussion
 
   async function postNewDiscussion(content: string) {
-    setLoadingExtraData(true);
+    setExtraLoader(true);
     if (!session || !session.user || !session.user.email) return;
     if (!post) return;
     const new_discussion: Discussion = {
@@ -223,14 +205,14 @@ export default function Page({ params }: Params) {
           "Content-Type": "application/json",
         },
       });
-      setLoadingExtraData(false);
+      setExtraLoader(false);
     } catch (e) {
       console.log(`Error occurred: ${e}`);
     }
   }
 
   async function postNewReply(content: string, discussionId: string) {
-    setLoadingExtraData(true);
+    setExtraLoader(true);
     if (!session || !session.user || !session.user.email) return;
     if (!post) return;
     const reply: Reply = {
@@ -239,11 +221,10 @@ export default function Page({ params }: Params) {
       id: uuid(),
     };
 
-    const discussion_replies = replies?.filter(
-      (reply) =>
-        discussions
-          ?.filter((disc) => disc.id == discussionId)[0]
-          .replies.includes(reply.id),
+    const discussion_replies = replies?.filter((reply) =>
+      discussions
+        ?.filter((disc) => disc.id == discussionId)[0]
+        .replies.includes(reply.id),
     );
     const new_replies = discussion_replies
       ? [...discussion_replies, reply]
@@ -283,7 +264,7 @@ export default function Page({ params }: Params) {
           "Content-Type": "application/json",
         },
       });
-      setLoadingExtraData(false);
+      setExtraLoader(false);
     } catch (e) {
       console.log(`Error occurred: ${e}`);
     }
@@ -293,19 +274,19 @@ export default function Page({ params }: Params) {
     if (!session || !session.user || !session.user.email || !post) {
       return;
     }
-    setLoadingExtraData(true);
+    setExtraLoader(true);
     const rawAccount = await fetch(
       `/api/chat/user?email=${session.user.email}`,
     );
     const rawAccount2 = await fetch(`/api/chat/user?email=${post.author}`);
     if (!rawAccount.ok) {
       toast.error("You have not opted in for chats yet!");
-      setLoadingExtraData(false);
+      setExtraLoader(false);
       return;
     }
     if (!rawAccount2.ok) {
       toast.error("The post author does not accept chats");
-      setLoadingExtraData(false);
+      setExtraLoader(false);
       return;
     }
 
@@ -341,7 +322,7 @@ export default function Page({ params }: Params) {
           toast.error("Could not begin your chat with author");
         }
       }
-    setLoadingExtraData(false);
+    setExtraLoader(false);
   }
   // menu for small screens
   const [openMenu, setOpenMenu] = useState<boolean>(false);
@@ -350,7 +331,7 @@ export default function Page({ params }: Params) {
     <Skeleton />
   ) : (
     <div className="min-h-screen">
-      <IndeterminateLoader loading={loadingExtraData} />
+      <IndeterminateLoader loading={loadingExtraData || extraLoader} />
       <div className="scroll-smooth p-4 transition-colors duration-200">
         <nav className="fixed left-2 top-2 z-[100] flex h-fit max-h-[50px] items-center justify-start rounded-lg backdrop-blur-md">
           <div className="py-1 pl-3 md:hidden">
@@ -400,7 +381,7 @@ export default function Page({ params }: Params) {
           )}
         </nav>
         {/* Title */}
-        <div className="relative mb-5 mt-10 md:mt-0 dark:z-10">
+        <div className="relative mb-5 mt-10 dark:z-10 md:mt-0">
           <h1 className="text-center text-5xl">{post?.title}</h1>
           {!loading && (
             <cite className="mt-3 block text-center text-lg text-muted-foreground">
@@ -434,7 +415,7 @@ export default function Page({ params }: Params) {
                 return (
                   <div
                     key={tag}
-                    className="mx-[2px] my-[2px] rounded-xl bg-slate-600 px-[4px] py-[2px] sm:w-[80%] dark:text-slate-300"
+                    className="mx-[2px] my-[2px] rounded-xl bg-slate-600 px-[4px] py-[2px] dark:text-slate-300 sm:w-[80%]"
                   >
                     {tag}
                   </div>
