@@ -22,7 +22,7 @@ interface Props {
   header?: string;
   markdown?: boolean;
   minorId?: string;
-  onUpload: Function;
+  onUpload: (content: string | null, minorId?: string) => void;
 }
 
 const GetMarkdownInput = ({

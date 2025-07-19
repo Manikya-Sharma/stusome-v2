@@ -11,6 +11,11 @@ import { useEffect, useState } from "react";
 import { v4 as uuid } from "uuid";
 import { uniq as _uniq } from "lodash";
 import { useGetAccounts } from "@/components/queries/account";
+import {
+  useGetAnswers,
+  usePostAnswer,
+  usePutAnswer,
+} from "@/components/queries/answers";
 
 export default function Doubt({ params: { id } }: { params: { id: string } }) {
   const { data: session } = useSession();
@@ -20,8 +25,12 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
   const [loading, setLoading] = useState<boolean>(true);
   const [accounts, setAccounts] = useState<Map<string, Account>>();
 
-  async function postNewAnswer(content: string) {
-    if (!session || !session.user || !session.user.email) return;
+  const { mutate: createNewAnswer } = usePostAnswer();
+  const { mutate: updateAnswer } = usePutAnswer();
+  const {} = useGetAnswers({ ids: doubt.map((doubt) => doubt.answer) }); // TODO
+
+  async function postNewAnswer(content: string | null) {
+    if (!session || !session.user || !session.user.email || !content) return;
     if (!data) return;
     const new_answer: DoubtAnswer = {
       author: session.user.email,
@@ -35,16 +44,9 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
 
     try {
       // create new answer
-      await fetch(`/api/answers`, {
-        method: "POST",
-        body: JSON.stringify(new_answer),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      createNewAnswer(new_answer);
 
       // link this answer to the doubt
-
       await fetch(`/api/doubts?id=${data.id}&field=answers`, {
         method: "PUT",
         body: JSON.stringify({
@@ -98,13 +100,11 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
 
       // link this reply to the answer
 
-      await fetch(`/api/answers?id=${answerId}&field=replies`, {
-        method: "PUT",
-        body: JSON.stringify({
+      updateAnswer({
+        id: answerId,
+        field: "replies",
+        newAnswer: {
           replies: new_replies.map((reply) => reply.id),
-        }),
-        headers: {
-          "Content-Type": "application/json",
         },
       });
     } catch (e) {
