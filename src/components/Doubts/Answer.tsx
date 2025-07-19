@@ -3,8 +3,8 @@ import ShowMarkdown from "../ShowMarkdown";
 import ShowProfileImage from "../ShowProfileImage";
 
 type Props = {
-  author?: Account;
-  content: string;
+  author?: Account | undefined;
+  content: string | undefined;
   replies: Array<DoubtReply>;
   authors?: Map<string, Account>;
 };
@@ -22,7 +22,7 @@ export default function Answer({ author, content, replies, authors }: Props) {
         <div>
           {/*  <!-- Added margin to the text container --> */}
           <div className="markdown-wrapper ml-4 mt-2 items-center justify-center px-3 text-gray-700">
-            <ShowMarkdown data={content} />
+            <ShowMarkdown data={content ?? ""} />
           </div>
         </div>
         <div className="text-gray-700">

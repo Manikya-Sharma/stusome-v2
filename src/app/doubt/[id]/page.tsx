@@ -6,7 +6,6 @@ import GetMarkdownInput from "@/components/GetMarkdownInput";
 import IndeterminateLoader from "@/components/IndeterminateLoader";
 import { Account } from "@/types/user";
 import { useSession } from "next-auth/react";
-import { notFound } from "next/navigation";
 import { useEffect, useState } from "react";
 import { v4 as uuid } from "uuid";
 import { uniq as _uniq } from "lodash";
@@ -16,22 +15,28 @@ import {
   usePostAnswer,
   usePutAnswer,
 } from "@/components/queries/answers";
+import { useGetDoubt, usePutDoubt } from "@/components/queries/doubts";
 
 export default function Doubt({ params: { id } }: { params: { id: string } }) {
   const { data: session } = useSession();
-  const [data, setData] = useState<Doubt | null>(null);
-  const [answers, setAnswers] = useState<Array<DoubtAnswer> | null>(null);
+
+  const { data: doubt } = useGetDoubt({ id });
+  const { mutate: updateDoubt } = usePutDoubt();
+
   const [replies, setReplies] = useState<Array<DoubtReply> | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [accounts, setAccounts] = useState<Map<string, Account>>();
 
   const { mutate: createNewAnswer } = usePostAnswer();
   const { mutate: updateAnswer } = usePutAnswer();
-  const {} = useGetAnswers({ ids: doubt.map((doubt) => doubt.answer) }); // TODO
+
+  const answers = useGetAnswers({ ids: doubt?.answers ?? [] }).map(
+    (ans) => ans.data,
+  );
 
   async function postNewAnswer(content: string | null) {
     if (!session || !session.user || !session.user.email || !content) return;
-    if (!data) return;
+    if (!doubt) return;
     const new_answer: DoubtAnswer = {
       author: session.user.email,
       content,
@@ -40,20 +45,16 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
     };
     const new_answers = answers ? [...answers, new_answer] : [new_answer];
 
-    setAnswers(() => new_answers);
-
     try {
       // create new answer
       createNewAnswer(new_answer);
 
       // link this answer to the doubt
-      await fetch(`/api/doubts?id=${data.id}&field=answers`, {
-        method: "PUT",
-        body: JSON.stringify({
-          answers: new_answers.map((ans) => ans.id),
-        }),
-        headers: {
-          "Content-Type": "application/json",
+      updateDoubt({
+        id: doubt.id,
+        field: "answers",
+        newDoubt: {
+          answers: new_answers.filter((ans) => ans).map((ans) => ans?.id ?? ""),
         },
       });
     } catch (e) {
@@ -63,7 +64,7 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
 
   async function postNewReply(content: string, answerId: string) {
     if (!session || !session.user || !session.user.email) return;
-    if (!data) return;
+    if (!doubt) return;
     const reply: DoubtReply = {
       author: session.user.email,
       content,
@@ -72,21 +73,18 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
 
     const answer_replies = replies?.filter((reply) =>
       answers
-        ?.filter((ans) => ans.id == answerId)[0]
-        .replies.includes(reply.id),
+        .filter((ans) => ans?.id == answerId)[0]
+        ?.replies.includes(reply.id),
     );
     const new_replies = answer_replies ? [...answer_replies, reply] : [reply];
 
     replies && setReplies(() => [...replies, reply]);
 
     if (!answers) return;
-    let updated_answer = answers.filter((ans) => ans.id == answerId)[0];
-    updated_answer.replies = new_replies.map((rep) => rep.id);
-    answers &&
-      setAnswers([
-        ...answers.filter((ans) => ans.id != answerId),
-        updated_answer,
-      ]);
+    let updated_answer = answers.filter((ans) => ans?.id == answerId)[0];
+    if (updated_answer) {
+      updated_answer.replies = new_replies.map((rep) => rep.id);
+    }
 
     try {
       // create new reply
@@ -115,39 +113,8 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
   useEffect(() => {
     async function getData() {
       try {
-        // get doubt data
-        const rawDoubt = await fetch(`/api/doubts?id=${id}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        const doubt = (await rawDoubt.json()) as Doubt;
-        if (doubt == null) {
-          notFound();
-        }
-        setData(doubt);
-
-        // get answer data
-        const answers = doubt.answers;
-        const answerRequests = answers.map((request) => {
-          return fetch(`/api/answers?id=${request}`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
-        });
-
-        const rawAnswers = await Promise.all(answerRequests);
-        const parsedAnswers = (await Promise.all(
-          rawAnswers.map((ans) => ans.json()),
-        )) as Array<DoubtAnswer>;
-
-        setAnswers(parsedAnswers);
-
         // get reply data
-        const replies = parsedAnswers.flatMap((ans) => ans.replies);
+        const replies = answers?.flatMap((ans) => ans?.replies);
 
         const replyRequests = replies.map((request) => {
           return fetch(`/api/doubt_replies?id=${request}`, {
@@ -174,9 +141,11 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
 
   const emails: Array<string> = _uniq(
     [
-      ...(answers ?? []).map((answer) => answer.author),
+      ...(answers ?? [])
+        .filter((ans) => ans)
+        .map((answer) => answer?.author ?? ""),
       ...(replies ?? []).map((reply) => reply.author),
-    ].concat(data?.author ? [data.author] : []),
+    ].concat(doubt?.author ? [doubt.author] : []),
   );
 
   const authors = useGetAccounts({ emails });
@@ -187,17 +156,19 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
       newAuthors.set(emails[index], value);
     });
     setAccounts(newAuthors);
-  }, [id, answers, data, replies]);
+  }, [id, answers, doubt, replies]);
 
   return (
     <main>
       <nav className="bg-black p-4 text-white dark:bg-slate-950">
         <IndeterminateLoader loading={loading} />
         <div className="text-center">
-          <h1 className="mb-3 text-2xl font-bold md:text-5xl">{data?.title}</h1>
+          <h1 className="mb-3 text-2xl font-bold md:text-5xl">
+            {doubt?.title}
+          </h1>
           <div className="mx-auto flex w-fit max-w-[80%] flex-wrap items-center justify-center">
-            {data &&
-              data.tags.map((tag) => {
+            {doubt &&
+              doubt.tags.map((tag) => {
                 return (
                   <p
                     key={tag}
@@ -211,36 +182,38 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
         </div>
       </nav>
       <div className="px-4 sm:px-8">
-        {data && accounts && (
+        {doubt && accounts && (
           <MainQuestion
-            author={accounts.get(data.author)}
-            content={data.content}
+            author={accounts.get(doubt.author)}
+            content={doubt.content}
           />
         )}
 
         {/* <!-- Doubts Section --> */}
 
-        {data &&
+        {doubt &&
           accounts &&
           answers &&
           replies &&
           answers.map((answer) => {
             return (
-              <div key={answer.id}>
+              <div key={answer?.id}>
                 <Answer
-                  key={answer.id}
-                  author={accounts.get(answer.author)}
-                  content={answer.content}
+                  key={answer?.id}
+                  author={accounts.get(answer?.author ?? "")}
+                  content={answer?.content}
                   replies={
                     replies &&
-                    replies.filter((reply) => answer.replies.includes(reply.id))
+                    replies.filter((reply) =>
+                      answer?.replies.includes(reply.id),
+                    )
                   }
                   authors={accounts}
                 />
                 <div className="text-right lg:mr-10">
                   <GetMarkdownInput
                     role="minor"
-                    minorId={answer.id}
+                    minorId={answer?.id}
                     onUpload={postNewReply}
                     triggerMessage="Reply"
                     header="Replying to an answer"

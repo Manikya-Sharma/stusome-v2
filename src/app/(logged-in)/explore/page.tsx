@@ -7,38 +7,44 @@ import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Post } from "@/types/post";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useGetAccounts } from "@/components/queries/account";
 import { uniq as _uniq } from "lodash";
+import { useGetAllDoubts } from "@/components/queries/doubts";
 
 const Page = () => {
   const [posts, setPosts] = useState<Array<Post>>([]);
-  const [doubts, setDoubts] = useState<Array<Doubt>>([]);
   const [authors, setAuthors] = useState<Map<
     string,
     string | undefined
   > | null>(null);
+  const { data: doubts } = useGetAllDoubts();
 
   const results: Array<Post | Doubt> = [];
 
-  // shuffle results
-  for (let i = 0; i < Math.max(posts.length, doubts.length); i += 1) {
-    if (i % 3 == 0) {
-      if (i < doubts.length) {
-        results.push(doubts[i]);
-      }
-      if (i < posts.length) {
-        results.push(posts[i]);
-      }
-    } else {
-      if (i < posts.length) {
-        results.push(posts[i]);
-      }
-      if (i < doubts.length) {
-        results.push(doubts[i]);
+  const shuffle = useCallback(() => {
+    if (!doubts) return;
+    // shuffle results
+    for (let i = 0; i < Math.max(posts.length, doubts.length); i += 1) {
+      if (i % 3 == 0) {
+        if (i < doubts.length) {
+          results.push(doubts[i]);
+        }
+        if (i < posts.length) {
+          results.push(posts[i]);
+        }
+      } else {
+        if (i < posts.length) {
+          results.push(posts[i]);
+        }
+        if (i < doubts.length) {
+          results.push(doubts[i]);
+        }
       }
     }
-  }
+  }, [doubts]);
+
+  shuffle();
 
   const loading = posts.length === 0;
 
@@ -57,26 +63,12 @@ const Page = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    async function fetchData() {
-      const rawPosts = await fetch(`/api/doubts/all`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      const doubts = (await rawPosts.json()) as Array<Doubt>;
-      setDoubts(doubts);
-    }
-    fetchData();
-  }, []);
-
   const map: Map<string, string> = new Map();
   const emails = _uniq([
     ...posts
       .filter((post) => post.published && !map.has(post.author))
       .map((post) => post.author),
-    ...doubts
+    ...(doubts ?? [])
       .filter((doubt) => !map.has(doubt.author))
       .map((doubt) => doubt.author),
   ]);

@@ -10,6 +10,7 @@ import { useSession } from "next-auth/react";
 import { v4 as uuid } from "uuid";
 import { useRouter } from "next/navigation";
 import { useGetAccount, usePutAccount } from "@/components/queries/account";
+import { usePostDoubt } from "@/components/queries/doubts";
 
 type formType = z.infer<typeof doubtSchema>;
 
@@ -26,6 +27,7 @@ const App = () => {
   const { mutate: updateAccount } = usePutAccount({
     email: session?.user?.email,
   });
+  const { mutate: createDoubt } = usePostDoubt();
 
   function changeContent(newContent: string) {
     formState.content = newContent;
@@ -57,13 +59,7 @@ const App = () => {
         id: newId,
       };
       try {
-        await fetch("/api/doubts", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(doubt),
-        });
+        createDoubt(doubt);
         const old_doubts = account?.doubts;
         const new_doubts = [...(old_doubts ?? []), newId];
         updateAccount({

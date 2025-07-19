@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import IndeterminateLoader from "@/components/IndeterminateLoader";
 import { useGetAccount, usePutAccount } from "@/components/queries/account";
+import { useGetDoubts } from "@/components/queries/doubts";
 
 const Page = () => {
   const { data: session, status } = useSession();
@@ -27,7 +28,9 @@ const Page = () => {
   }
 
   const [posts, setPosts] = useState<Array<Post>>([]);
-  const [doubts, setDoubts] = useState<Array<Doubt>>([]);
+  const doubtIds = account?.doubts;
+  const fetchedDoubts = useGetDoubts({ ids: doubtIds ?? [] });
+  const doubts = fetchedDoubts.map((doubt) => doubt.data);
 
   useEffect(() => {
     if (account == null) return;
@@ -43,20 +46,9 @@ const Page = () => {
       )) as Post[];
       setPosts(parsedResponses.filter((post) => post != null));
     }
-    async function getDoubts() {
-      if (!account) return;
-      const doubtIds = account.doubts;
-      const requests = doubtIds.map((id) => {
-        return fetch(`/api/doubts?id=${id}`, { cache: "no-cache" });
-      });
-      const responses = await Promise.all(requests);
-      const parsedResponses = (await Promise.all(
-        responses.map((response) => response.json()),
-      )) as Doubt[];
-      setDoubts(parsedResponses.filter((post) => post != null));
-    }
+
     async function getData() {
-      await Promise.all([getPosts(), getDoubts()]);
+      await Promise.all([getPosts()]);
       setLoading(false);
     }
     getData();
@@ -170,14 +162,14 @@ const Page = () => {
                   doubts.map((doubt) => {
                     return (
                       <div
-                        key={doubt.id}
+                        key={doubt?.id}
                         className="my-5 cursor-pointer overflow-hidden rounded-lg bg-slate-200 p-4 py-5 transition-transform hover:scale-105 dark:bg-slate-800 lg:mx-3 lg:min-w-[20%] lg:max-w-[40%] lg:flex-1"
-                        onClick={() => router.push(`/doubt/${doubt.id}`)}
+                        onClick={() => router.push(`/doubt/${doubt?.id}`)}
                       >
                         <h3 className="mb-2 text-xl font-semibold">
-                          {doubt.title}
+                          {doubt?.title}
                         </h3>
-                        <p>{doubt.content.slice(0, 150)} ...</p>
+                        <p>{doubt?.content.slice(0, 150)} ...</p>
                       </div>
                     );
                   })}
