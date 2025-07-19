@@ -1,15 +1,17 @@
 import { Account } from "@/types/user";
 import ShowMarkdown from "../ShowMarkdown";
 import ShowProfileImage from "../ShowProfileImage";
+import { useGetAccount } from "../queries/account";
+import Reply from "./Reply";
 
 type Props = {
-  author?: Account | undefined;
+  authorEmail: string | undefined;
   content: string | undefined;
   replies: Array<DoubtReply>;
-  authors?: Map<string, Account>;
 };
 
-export default function Answer({ author, content, replies, authors }: Props) {
+export default function Answer({ authorEmail, content, replies }: Props) {
+  const { data: author } = useGetAccount({ email: authorEmail });
   return (
     <section className="container mx-auto mt-6">
       <div className="relative overflow-hidden rounded-lg border border-blue-200 bg-blue-50 p-4 shadow-md dark:border-blue-700 dark:bg-blue-950">
@@ -26,34 +28,9 @@ export default function Answer({ author, content, replies, authors }: Props) {
           </div>
         </div>
         <div className="text-gray-700">
-          {replies.map((reply) => {
-            return (
-              <div
-                key={reply.id}
-                className="mt-3 flex items-center justify-start gap-3"
-              >
-                <div className="h-5 w-[1px] bg-emerald-400"></div>
-                <div>
-                  {authors && (
-                    <div className="flex items-center gap-2">
-                      <div>
-                        <ShowProfileImage
-                          data={authors.get(reply.author)}
-                          small={true}
-                        />
-                      </div>
-                      <h2 className="text-xl dark:text-slate-400">
-                        {authors.get(reply.author)?.name}
-                      </h2>
-                    </div>
-                  )}
-                  <div className="markdown-wrapper">
-                    <ShowMarkdown data={reply.content} />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {replies.map((reply) => (
+            <Reply reply={reply} />
+          ))}
         </div>
       </div>
     </section>

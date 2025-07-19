@@ -23,6 +23,7 @@ interface Props {
   markdown?: boolean;
   minorId?: string;
   onUpload: (content: string | null, minorId?: string) => void;
+  disabled?: boolean;
 }
 
 const GetMarkdownInput = ({
@@ -32,12 +33,13 @@ const GetMarkdownInput = ({
   role,
   onUpload,
   minorId,
+  disabled,
 }: Props) => {
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const [content, setContent] = useState<string | null>(null);
   return (
     <Dialog>
-      <DialogTrigger>
+      <DialogTrigger asChild>
         <Button
           className={cn({
             "text-md ml-auto mr-7 mt-2 flex w-fit gap-2 rounded-xl bg-teal-800 px-3 py-2 text-slate-200 transition hover:bg-teal-600 hover:text-white/80 dark:bg-teal-500 dark:hover:bg-teal-300 dark:hover:text-slate-800":
@@ -89,6 +91,7 @@ const GetMarkdownInput = ({
           </DialogClose>
           <DialogClose asChild>
             <Button
+              disabled={disabled}
               onClick={() =>
                 minorId ? onUpload(content, minorId) : onUpload(content)
               }

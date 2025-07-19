@@ -1,13 +1,14 @@
-import { Account } from "@/types/user";
 import ShowMarkdown from "../ShowMarkdown";
 import ShowProfileImage from "../ShowProfileImage";
+import { useGetAccount } from "../queries/account";
 
 type Props = {
-  author?: Account;
-  content: string;
+  authorEmail: string | undefined;
+  content: string | undefined;
 };
 
-export default function MainQuestion({ author, content }: Props) {
+export default function MainQuestion({ authorEmail, content }: Props) {
+  const { data: author } = useGetAccount({ email: authorEmail });
   return (
     <section className="container mx-auto mt-6">
       <div className="relative overflow-hidden rounded-lg border border-indigo-200 bg-indigo-100 p-4 shadow-md dark:border-indigo-600 dark:bg-indigo-950">
@@ -21,7 +22,7 @@ export default function MainQuestion({ author, content }: Props) {
           <div className="h-16 w-3 bg-emerald-600"></div>
           {/*  <!-- Added margin to the text container --> */}
           <div className="markdown-wrapper ml-4 mt-2 flex min-h-[6rem] flex-col items-center justify-center px-3 font-semibold leading-relaxed text-gray-700">
-            <ShowMarkdown data={content} />
+            <ShowMarkdown data={content ?? ""} />
           </div>
         </div>
       </div>

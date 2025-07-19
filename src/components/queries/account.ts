@@ -16,7 +16,7 @@ export const usePostAccount = () => {
 };
 
 const getAccount = async (email: string | null | undefined) => {
-  const rawAccount = await fetch(`/api/account?email=${email}`);
+  const rawAccount = await fetch(`/api/accounts?email=${email}`);
   const account = (await rawAccount.json()) as Account;
   return account;
 };
@@ -55,7 +55,7 @@ export const usePutAccount = ({
       field: "name" | "image" | "image_third_party" | "posts" | "doubts";
       newAccount: Partial<Account>;
     }) => {
-      await fetch(`/api/account?email=${email}&field=${field}`, {
+      await fetch(`/api/accounts?email=${email}&field=${field}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

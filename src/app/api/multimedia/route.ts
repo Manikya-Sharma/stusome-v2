@@ -1,5 +1,4 @@
-//@ts-ignore
-import { Pool } from "pg/lib";
+import { Pool } from "pg";
 import { config } from "@/lib/cdb";
 import { NextRequest, NextResponse } from "next/server";
 

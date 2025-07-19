@@ -4,12 +4,6 @@ import Answer from "@/components/Doubts/Answer";
 import MainQuestion from "@/components/Doubts/MainQuestion";
 import GetMarkdownInput from "@/components/GetMarkdownInput";
 import IndeterminateLoader from "@/components/IndeterminateLoader";
-import { Account } from "@/types/user";
-import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
-import { v4 as uuid } from "uuid";
-import { uniq as _uniq } from "lodash";
-import { useGetAccounts } from "@/components/queries/account";
 import {
   useGetAnswers,
   usePostAnswer,
@@ -17,27 +11,38 @@ import {
 } from "@/components/queries/answers";
 import { useGetDoubt, usePutDoubt } from "@/components/queries/doubts";
 import { useGetReplies, usePostReply } from "@/components/queries/replies";
+import { uniq as _uniq } from "lodash";
+import { useSession } from "next-auth/react";
+import { use, useMemo } from "react";
+import { v4 as uuid } from "uuid";
 
-export default function Doubt({ params: { id } }: { params: { id: string } }) {
+export default function Doubt({ params }: { params: Promise<{ id: string }> }) {
   const { data: session } = useSession();
+  const { id } = use(params);
 
-  const { data: doubt } = useGetDoubt({ id });
-  const { mutate: updateDoubt } = usePutDoubt();
+  const { data: doubt, isLoading: isLoadingDoubt } = useGetDoubt({ id });
+  const { mutate: updateDoubt, isPending: isUpdatingDoubt } = usePutDoubt();
 
-  const [loading, setLoading] = useState<boolean>(true);
-  const [accounts, setAccounts] = useState<Map<string, Account>>();
+  const { mutate: createNewAnswer, isPending: isCreatingAnswer } =
+    usePostAnswer();
+  const { mutate: updateAnswer, isPending: isUpdatingAnswer } = usePutAnswer();
 
-  const { mutate: createNewAnswer } = usePostAnswer();
-  const { mutate: updateAnswer } = usePutAnswer();
+  const { mutate: createNewReply, isPending: usCreatingReply } = usePostReply();
 
-  const { mutate: createNewReply } = usePostReply();
-
-  const answers = useGetAnswers({ ids: doubt?.answers ?? [] }).map(
-    (ans) => ans.data,
+  const answersQuery = useGetAnswers({ ids: doubt?.answers ?? [] });
+  const answers = useMemo(
+    () => answersQuery.map((ans) => ans.data),
+    [answersQuery],
   );
+  const isLoadingAnswers = answersQuery.some((ans) => ans.isLoading);
 
   const replyIds = answers?.flatMap((ans) => ans?.replies);
-  const replies = useGetReplies({ ids: replyIds }).map((rep) => rep.data);
+  const repliesQuery = useGetReplies({ ids: replyIds });
+  const replies = useMemo(
+    () => repliesQuery.map((rep) => rep.data),
+    [repliesQuery],
+  );
+  const isLoadingReplies = repliesQuery.some((rep) => rep.isLoading);
 
   async function postNewAnswer(content: string | null) {
     if (!session || !session.user || !session.user.email || !content) return;
@@ -113,31 +118,12 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
     }
   }
 
-  const emails: Array<string> = _uniq(
-    [
-      ...((answers ?? [])
-        .map((answer) => answer?.author ?? null)
-        .filter((answer) => answer) as string[]),
-      ...((replies ?? [])
-        .map((reply) => reply?.author ?? null)
-        .filter((rep) => rep) as string[]),
-    ].concat(doubt?.author ? [doubt.author] : []),
-  );
-
-  const authors = useGetAccounts({ emails });
-
-  useEffect(() => {
-    const newAuthors = new Map();
-    authors.map((value, index) => {
-      newAuthors.set(emails[index], value);
-    });
-    setAccounts(newAuthors);
-  }, [id, answers, doubt, replies]);
-
   return (
     <main>
       <nav className="bg-black p-4 text-white dark:bg-slate-950">
-        <IndeterminateLoader loading={loading} />
+        <IndeterminateLoader
+          loading={isLoadingAnswers || isLoadingDoubt || isLoadingReplies}
+        />
         <div className="text-center">
           <h1 className="mb-3 text-2xl font-bold md:text-5xl">
             {doubt?.title}
@@ -158,17 +144,11 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
         </div>
       </nav>
       <div className="px-4 sm:px-8">
-        {doubt && accounts && (
-          <MainQuestion
-            author={accounts.get(doubt.author)}
-            content={doubt.content}
-          />
-        )}
+        <MainQuestion authorEmail={doubt?.author} content={doubt?.content} />
 
         {/* <!-- Doubts Section --> */}
 
         {doubt &&
-          accounts &&
           answers &&
           replies &&
           answers.map((answer) => {
@@ -176,7 +156,7 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
               <div key={answer?.id}>
                 <Answer
                   key={answer?.id}
-                  author={accounts.get(answer?.author ?? "")}
+                  authorEmail={answer?.author}
                   content={answer?.content}
                   replies={
                     replies.filter(
@@ -184,10 +164,10 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
                       // BUG: Are you sure about type inference?
                     ) as DoubtReply[]
                   }
-                  authors={accounts}
                 />
                 <div className="text-right lg:mr-10">
                   <GetMarkdownInput
+                    disabled={isUpdatingAnswer}
                     role="minor"
                     minorId={answer?.id}
                     onUpload={postNewReply}
@@ -202,6 +182,7 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
 
         <div className="mx-auto my-5 w-fit">
           <GetMarkdownInput
+            disabled={isCreatingAnswer}
             onUpload={postNewAnswer}
             role="major"
             triggerMessage="New Answer"
