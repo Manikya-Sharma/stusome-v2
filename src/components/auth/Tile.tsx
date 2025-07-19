@@ -11,11 +11,9 @@ const Tile = ({ provider }: Props) => {
   const [loading, setLoading] = useState<boolean>(false);
   async function loadSigning(via: "github" | "google" | "discord") {
     setLoading(true);
-    const load = await signIn(via);
-    if (load?.ok) {
-      setLoading(false);
-      localStorage.setItem("logged-in", "true");
-    }
+    await signIn(via);
+    setLoading(false);
+    localStorage.setItem("logged-in", "true");
   }
 
   return (

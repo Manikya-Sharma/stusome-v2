@@ -29,7 +29,7 @@ const SessionRedirect = ({
     }
   }, [router, to]);
 
-  // if local-storage does'nt contain logged-in somehow
+  // if local-storage doesn't contain logged-in somehow
   if (status === when) {
     router.replace(to);
   }
