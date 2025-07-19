@@ -16,6 +16,7 @@ import {
   usePutAnswer,
 } from "@/components/queries/answers";
 import { useGetDoubt, usePutDoubt } from "@/components/queries/doubts";
+import { useGetReplies, usePostReply } from "@/components/queries/replies";
 
 export default function Doubt({ params: { id } }: { params: { id: string } }) {
   const { data: session } = useSession();
@@ -23,16 +24,20 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
   const { data: doubt } = useGetDoubt({ id });
   const { mutate: updateDoubt } = usePutDoubt();
 
-  const [replies, setReplies] = useState<Array<DoubtReply> | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [accounts, setAccounts] = useState<Map<string, Account>>();
 
   const { mutate: createNewAnswer } = usePostAnswer();
   const { mutate: updateAnswer } = usePutAnswer();
 
+  const { mutate: createNewReply } = usePostReply();
+
   const answers = useGetAnswers({ ids: doubt?.answers ?? [] }).map(
     (ans) => ans.data,
   );
+
+  const replyIds = answers?.flatMap((ans) => ans?.replies);
+  const replies = useGetReplies({ ids: replyIds }).map((rep) => rep.data);
 
   async function postNewAnswer(content: string | null) {
     if (!session || !session.user || !session.user.email || !content) return;
@@ -62,8 +67,11 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
     }
   }
 
-  async function postNewReply(content: string, answerId: string) {
-    if (!session || !session.user || !session.user.email) return;
+  async function postNewReply(
+    content: string | null,
+    answerId: string | undefined,
+  ) {
+    if (!session || !session.user || !session.user.email || !content) return;
     if (!doubt) return;
     const reply: DoubtReply = {
       author: session.user.email,
@@ -74,35 +82,30 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
     const answer_replies = replies?.filter((reply) =>
       answers
         .filter((ans) => ans?.id == answerId)[0]
-        ?.replies.includes(reply.id),
+        ?.replies.includes(reply?.id ?? ""),
     );
     const new_replies = answer_replies ? [...answer_replies, reply] : [reply];
-
-    replies && setReplies(() => [...replies, reply]);
 
     if (!answers) return;
     let updated_answer = answers.filter((ans) => ans?.id == answerId)[0];
     if (updated_answer) {
-      updated_answer.replies = new_replies.map((rep) => rep.id);
+      updated_answer.replies = new_replies
+        .map((rep) => rep?.id ?? null)
+        .filter((rep) => rep) as string[];
     }
 
     try {
       // create new reply
-      await fetch(`/api/doubt_replies`, {
-        method: "POST",
-        body: JSON.stringify(reply),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      createNewReply(reply);
 
       // link this reply to the answer
-
       updateAnswer({
         id: answerId,
         field: "replies",
         newAnswer: {
-          replies: new_replies.map((reply) => reply.id),
+          replies: new_replies
+            .map((reply) => reply?.id ?? null)
+            .filter((rep) => rep) as string[],
         },
       });
     } catch (e) {
@@ -110,41 +113,14 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
     }
   }
 
-  useEffect(() => {
-    async function getData() {
-      try {
-        // get reply data
-        const replies = answers?.flatMap((ans) => ans?.replies);
-
-        const replyRequests = replies.map((request) => {
-          return fetch(`/api/doubt_replies?id=${request}`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
-        });
-
-        const rawReplies = await Promise.all(replyRequests);
-        const parsedReplies = (await Promise.all(
-          rawReplies.map((reply) => reply.json()),
-        )) as Array<DoubtAnswer>;
-        setReplies(parsedReplies);
-      } catch (e) {
-        console.log(`Error: ${e}`);
-      } finally {
-        setLoading(false);
-      }
-    }
-    getData();
-  }, [id]);
-
   const emails: Array<string> = _uniq(
     [
-      ...(answers ?? [])
-        .filter((ans) => ans)
-        .map((answer) => answer?.author ?? ""),
-      ...(replies ?? []).map((reply) => reply.author),
+      ...((answers ?? [])
+        .map((answer) => answer?.author ?? null)
+        .filter((answer) => answer) as string[]),
+      ...((replies ?? [])
+        .map((reply) => reply?.author ?? null)
+        .filter((rep) => rep) as string[]),
     ].concat(doubt?.author ? [doubt.author] : []),
   );
 
@@ -203,10 +179,10 @@ export default function Doubt({ params: { id } }: { params: { id: string } }) {
                   author={accounts.get(answer?.author ?? "")}
                   content={answer?.content}
                   replies={
-                    replies &&
-                    replies.filter((reply) =>
-                      answer?.replies.includes(reply.id),
-                    )
+                    replies.filter(
+                      (reply) => answer?.replies.includes(reply?.id ?? ""),
+                      // BUG: Are you sure about type inference?
+                    ) as DoubtReply[]
                   }
                   authors={accounts}
                 />
