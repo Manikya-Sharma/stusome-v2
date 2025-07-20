@@ -12,14 +12,10 @@ import {
   CardTitle,
 } from "./ui/card";
 import Image from "next/image";
+import { useGetAccount } from "./queries/accounts";
 
-const PostPreview = ({
-  post,
-  authorMap,
-}: {
-  post: Post;
-  authorMap: Map<string, string | undefined> | null;
-}) => {
+const PostPreview = ({ post }: { post: Post }) => {
+  const { data: author } = useGetAccount({ email: post.author });
   const router = useRouter();
   return (
     <Card
@@ -57,7 +53,7 @@ const PostPreview = ({
         )}
       </CardContent>
       <CardFooter className="ml-auto w-fit pr-5 text-muted-foreground">
-        {authorMap !== null && `by ${authorMap.get(post.author)}`}
+        by {author?.name}
       </CardFooter>
     </Card>
   );

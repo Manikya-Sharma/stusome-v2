@@ -12,15 +12,11 @@ import {
 } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Doubt } from "@/types/doubt";
+import { useGetAccount } from "./queries/accounts";
 
-const DoubtPreview = ({
-  doubt,
-  authorMap,
-}: {
-  doubt: Doubt;
-  authorMap: Map<string, string | undefined> | null;
-}) => {
+const DoubtPreview = ({ doubt }: { doubt: Doubt }) => {
   const router = useRouter();
+  const { data: author } = useGetAccount({ email: doubt.author });
   return (
     <Card
       className="group mx-auto w-[80%] max-w-prose cursor-pointer transition-all hover:scale-105 hover:border-black/30 hover:bg-black/5 dark:border-white/30 md:w-full"
@@ -47,7 +43,7 @@ const DoubtPreview = ({
       <CardContent>{doubt.content.substring(0, 500)}</CardContent>
       <CardFooter className="flex items-center justify-end gap-1 pr-5 text-muted-foreground">
         <Badge variant={"secondary"}>Doubt</Badge>
-        {authorMap !== null && `by ${authorMap.get(doubt.author)}`}
+        by {author?.name}
       </CardFooter>
     </Card>
   );
