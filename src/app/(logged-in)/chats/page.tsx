@@ -1,6 +1,6 @@
 "use client";
 
-import { useGetAccount } from "@/components/queries/account";
+import { useGetAccount } from "@/components/queries/accounts";
 import RecentChats from "@/components/RecentChats";
 import RequestsForChat from "@/components/RequestsForChat";
 import { Button } from "@/components/ui/button";

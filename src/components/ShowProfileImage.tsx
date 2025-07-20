@@ -1,14 +1,15 @@
 import { cn } from "@/lib/utils";
-import { Account } from "@/types/user";
 import { User2 } from "lucide-react";
 import Image from "next/image";
+import { useGetAccount } from "./queries/accounts";
 
 type Props = {
-  data?: Account;
+  authorEmail: string | undefined;
   small?: boolean;
 };
 
-export default function ShowProfileImage({ data, small }: Props) {
+export default function ShowProfileImage({ authorEmail, small }: Props) {
+  const { data } = useGetAccount({ email: authorEmail });
   return (
     <div
       className={

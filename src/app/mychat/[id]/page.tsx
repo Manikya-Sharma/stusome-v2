@@ -5,14 +5,14 @@ import { cn, getEmailsFromChatId } from "@/lib/utils";
 import { Account } from "@/types/user";
 import { Loader, SendHorizontal } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { v4 as uuid } from "uuid";
 import TextareaAutoSize from "react-textarea-autosize";
 import { format } from "date-fns";
 import { getPusherId, pusherClient } from "@/lib/pusher";
 import { useRouter } from "next/navigation";
 
-export default function Page({ params }: { params: { id: string } }) {
+export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const [isSending, setIsSending] = useState<boolean>(false);
   const chatRef = useRef<HTMLTextAreaElement | null>(null);
   let [chats, setChats] = useState<
@@ -25,7 +25,8 @@ export default function Page({ params }: { params: { id: string } }) {
     }>
   >([]);
   let { data: session, status } = useSession();
-  const id = params.id.replaceAll("%3A", ":").replaceAll("%40", "@");
+  const { id: _id } = use(params);
+  const id = _id.replaceAll("%3A", ":").replaceAll("%40", "@");
   let [from_user, to_user] = getEmailsFromChatId(id);
   let from_user_is_me = session?.user?.email == from_user;
 
@@ -192,7 +193,7 @@ export default function Page({ params }: { params: { id: string } }) {
   return (
     <div className="selection:bg-green-100 selection:text-green-950">
       <h1 className="fixed inset-x-0 top-14 z-10 mr-auto flex items-center gap-2 bg-[rgba(236,253,245,0.6)] py-2 pl-5 text-3xl tracking-tighter text-slate-900 backdrop-blur-sm dark:bg-[rgba(30,41,59,0.6)] dark:text-slate-200">
-        <ShowProfileImage />
+        <ShowProfileImage authorEmail={friend?.email} />
         <div>{friend?.name}</div>
       </h1>
       <div className="flex h-[86vh] flex-col-reverse overflow-y-auto px-5 pb-20 pt-14 dark:bg-slate-900">

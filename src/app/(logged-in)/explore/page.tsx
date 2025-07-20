@@ -8,22 +8,25 @@ import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Post } from "@/types/post";
 import { useCallback, useEffect, useState } from "react";
-import { useGetAccounts } from "@/components/queries/account";
+import { useGetAccounts } from "@/components/queries/accounts";
 import { uniq as _uniq } from "lodash";
 import { useGetAllDoubts } from "@/components/queries/doubts";
+import { useGetAllPosts } from "@/components/queries/posts";
 
 const Page = () => {
-  const [posts, setPosts] = useState<Array<Post>>([]);
   const [authors, setAuthors] = useState<Map<
     string,
     string | undefined
   > | null>(null);
-  const { data: doubts } = useGetAllDoubts();
+  const { data: doubts, isLoading: isLoadingDoubts } = useGetAllDoubts();
+  const { data: posts, isLoading: isLoadingPosts } = useGetAllPosts();
+
+  const isLoading = isLoadingPosts || isLoadingDoubts;
 
   const results: Array<Post | Doubt> = [];
 
   const shuffle = useCallback(() => {
-    if (!doubts) return;
+    if (!doubts || !posts) return;
     // shuffle results
     for (let i = 0; i < Math.max(posts.length, doubts.length); i += 1) {
       if (i % 3 == 0) {
@@ -42,30 +45,13 @@ const Page = () => {
         }
       }
     }
-  }, [doubts]);
+  }, [doubts, posts]);
 
   shuffle();
 
-  const loading = posts.length === 0;
-
-  useEffect(() => {
-    async function fetchData() {
-      const rawPosts = await fetch(`/api/posts/all`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      const allPosts = (await rawPosts.json()) as Array<Post>;
-      const posts = allPosts.filter((post) => post.published);
-      setPosts(posts);
-    }
-    fetchData();
-  }, []);
-
   const map: Map<string, string> = new Map();
   const emails = _uniq([
-    ...posts
+    ...(posts ?? [])
       .filter((post) => post.published && !map.has(post.author))
       .map((post) => post.author),
     ...(doubts ?? [])
@@ -97,20 +83,26 @@ const Page = () => {
           {results.map((res) => {
             if (Object.hasOwn(res, "coverImgFull")) {
               return (
-                //@ts-ignore
-                <PostPreview key={res.id} post={res} authorMap={authors} />
+                <PostPreview
+                  key={res.id}
+                  post={res as Post}
+                  authorMap={authors}
+                />
               );
             } else {
               return (
-                //@ts-ignore
-                <DoubtPreview key={res.id} doubt={res} authorMap={authors} />
+                <DoubtPreview
+                  key={res.id}
+                  doubt={res as Doubt}
+                  authorMap={authors}
+                />
               );
             }
           })}
         </Masonry>
       </ResponsiveMasonry>
 
-      {loading && (
+      {isLoading && (
         <ResponsiveMasonry columnsCountBreakPoints={{ 350: 1, 750: 2 }}>
           <Masonry gutter="10px">
             <Skeleton className="mx-auto h-60 w-[80%] max-w-prose" />

@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import IndeterminateLoader from "@/components/IndeterminateLoader";
-import { useGetAccount, usePutAccount } from "@/components/queries/account";
+import { useGetAccount, usePutAccount } from "@/components/queries/accounts";
 import { useGetDoubts } from "@/components/queries/doubts";
 
 const Page = () => {

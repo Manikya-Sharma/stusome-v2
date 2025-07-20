@@ -10,7 +10,10 @@ import {
   usePutAnswer,
 } from "@/components/queries/answers";
 import { useGetDoubt, usePutDoubt } from "@/components/queries/doubts";
-import { useGetReplies, usePostReply } from "@/components/queries/replies";
+import {
+  useGetReplies,
+  usePostReply,
+} from "@/components/queries/doubt_replies";
 import { uniq as _uniq } from "lodash";
 import { useSession } from "next-auth/react";
 import { use, useMemo } from "react";

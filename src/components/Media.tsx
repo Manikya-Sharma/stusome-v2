@@ -52,8 +52,9 @@ export default function Media({ changeMedia }: { changeMedia: Function }) {
         <Input type="file" multiple ref={inpRef} />
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button
+                asChild
                 onClick={() => {
                   toast.promise(handleSubmit(), {
                     error: "Unable to upload media",

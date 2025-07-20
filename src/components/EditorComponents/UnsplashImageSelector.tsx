@@ -1,31 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Input } from "../ui/input";
-import { Search } from "lucide-react";
-import { Button } from "../ui/button";
-import Image from "next/image";
-import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import { DialogClose } from "@radix-ui/react-dialog";
-
-type UnsplashImage = {
-  id: string;
-  urls: {
-    raw: string;
-    full: string;
-    small: string;
-  };
-  alt: string;
-  likes: number;
-  color: string;
-  width: number;
-  height: number;
-};
+import { Search } from "lucide-react";
+import Image from "next/image";
+import { useRef, useState } from "react";
+import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
+import { useGetUnsplash } from "../queries/unsplash";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
 const UnsplashImageSelector = ({ setCover }: { setCover: Function }) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [search, setSearch] = useState<string | null>(null);
-  const [images, setImages] = useState<Array<UnsplashImage>>([]);
   function searchImages() {
     if (!inputRef || !inputRef.current) return;
     const query = inputRef.current.value;
@@ -33,16 +19,8 @@ const UnsplashImageSelector = ({ setCover }: { setCover: Function }) => {
       setSearch(query);
     }
   }
-  useEffect(() => {
-    async function getData() {
-      const rawData = await fetch(
-        `/api/unsplash${search ? `?query=${search}` : ""}`,
-      );
-      const data = await rawData.json();
-      setImages(data.results);
-    }
-    getData();
-  }, [search]);
+  const { data: images } = useGetUnsplash({ query: search });
+
   return (
     <div>
       <div className="flex items-center justify-center gap-2">
@@ -63,7 +41,7 @@ const UnsplashImageSelector = ({ setCover }: { setCover: Function }) => {
       <div className="my-3 max-h-60 w-full overflow-y-auto">
         <ResponsiveMasonry columnsCountBreakPoints={{ 300: 2 }}>
           <Masonry gutter="6px">
-            {images.map((image) => {
+            {images?.results.map((image) => {
               return (
                 <DialogClose
                   key={image.id}
@@ -73,7 +51,7 @@ const UnsplashImageSelector = ({ setCover }: { setCover: Function }) => {
                     <Image
                       className="block rounded-lg"
                       src={image.urls.small}
-                      alt={image.alt}
+                      alt={image.description ?? `Image related to ${search}`}
                       width={image.width}
                       height={image.height}
                     />

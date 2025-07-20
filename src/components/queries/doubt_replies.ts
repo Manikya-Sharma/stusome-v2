@@ -1,10 +1,9 @@
-import { Reply } from "@/types/post";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 
 export const usePostReply = () => {
   return useMutation({
-    mutationFn: async (newReply: Reply) => {
-      await fetch("/api/replies", {
+    mutationFn: async (newReply: DoubtReply) => {
+      await fetch("/api/doubt_replies", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -16,15 +15,15 @@ export const usePostReply = () => {
 };
 
 const getReply = async (id: string | null | undefined) => {
-  const rawReply = await fetch(`/api/replies?id=${id}`);
-  const reply = (await rawReply.json()) as Reply;
+  const rawReply = await fetch(`/api/doubt_replies?id=${id}`);
+  const reply = (await rawReply.json()) as DoubtReply;
   return reply;
 };
 
 export const useGetReply = ({ id }: { id: string | null | undefined }) => {
   return useQuery({
     queryFn: async () => await getReply(id),
-    queryKey: ["getReply", id],
+    queryKey: ["getDoubtReply", id],
     enabled: Boolean(id),
   });
 };
@@ -37,7 +36,7 @@ export const useGetReplies = ({
   return useQueries({
     queries: ids.map((id) => ({
       queryFn: async () => await getReply(id),
-      queryKey: ["getReply", id],
+      queryKey: ["getDoubtReply", id],
     })),
   });
 };

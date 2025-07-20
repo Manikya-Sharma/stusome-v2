@@ -4,36 +4,46 @@ import ShowMarkdown from "@/components/ShowMarkdown";
 import Image from "next/image";
 
 import { Cross as Hamburger } from "hamburger-react";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 
 import { v4 as uuid } from "uuid";
 
+import DisplayMedia from "@/components/DisplayMedia";
 import Answer from "@/components/Doubts/Answer";
 import GetMarkdownInput from "@/components/GetMarkdownInput";
+import IndeterminateLoader from "@/components/IndeterminateLoader";
 import Headings from "@/components/Posts/Headings";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Discussion, Post, Reply } from "@/types/post";
-import { Account, ChatAccount } from "@/types/user";
-import { useSession } from "next-auth/react";
-import { notFound, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Pen } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import IndeterminateLoader from "@/components/IndeterminateLoader";
 import { getChatId } from "@/lib/utils";
+import { Discussion, Reply } from "@/types/post";
+import { ChatAccount } from "@/types/user";
+import { MessageCircle, Pen } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import DisplayMedia from "@/components/DisplayMedia";
 
+import { useGetAccount, useGetAccounts } from "@/components/queries/accounts";
+import {
+  useGetDiscussions,
+  usePostDiscussion,
+  usePutDiscussion,
+} from "@/components/queries/discussions";
+import {
+  useGetReplies,
+  usePostReply,
+} from "@/components/queries/doubt_replies";
+import { useGetPost, usePutPost } from "@/components/queries/posts";
 import { uniq as _uniq } from "lodash";
-import { useGetAccounts } from "@/components/queries/account";
 
 type Params = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 export default function Page({ params }: Params) {
@@ -41,80 +51,34 @@ export default function Page({ params }: Params) {
   const { data: session, status } = useSession();
 
   // fetching data
-  const id = params.id;
-  const [accounts, setAccounts] = useState<Map<string, Account>>();
-  const [post, setPost] = useState<Post | null>(null);
-  const [discussions, setDiscussions] = useState<Array<Discussion> | null>(
-    null,
-  );
+  const { id } = use(params);
   const [extraLoader, setExtraLoader] = useState<boolean>(true);
-  const [replies, setReplies] = useState<Array<Reply> | null>(null);
   const [media, setMedia] = useState<Array<string>>([]);
-  const loading = post === null;
   const [headings, setHeadings] = useState<string[]>([]);
-  let author = post && accounts ? accounts.get(post.author) : null;
+
+  const { data: post, isLoading: loading } = useGetPost({ id });
+  const { mutate: updatePost } = usePutPost();
+  const discussionIds = post?.discussions;
+
+  const discussionsQuery = useGetDiscussions({ ids: discussionIds ?? [] });
+  const discussions = discussionsQuery.map((disc) => disc.data);
+  const { mutate: updateDiscussion } = usePutDiscussion();
+  const { mutate: createNewDiscussion } = usePostDiscussion();
+
+  const replyIds = discussions.flatMap((disc) => disc?.replies);
+  const repliesQuery = useGetReplies({ ids: replyIds });
+  const replies = repliesQuery.map((reply) => reply.data);
+  const { mutate: createNewReply } = usePostReply();
+
+  let { data: author } = useGetAccount({ email: post?.author });
+
   useEffect(() => {
     if (status === "loading") return;
     async function getData() {
       try {
-        // get post data
-        const rawPost = await fetch(`/api/posts?id=${id}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        const post = (await rawPost.json()) as Post;
-        if (post == null) {
-          notFound();
-        }
-        if (!post.published) {
-          if (status === "authenticated") {
-            // TODO: the edit route will handle unauthorized access
-            router.replace(`/post/${id}/edit`);
-          }
-          return notFound();
-        }
-        setPost(post);
-
-        // get discussions
-
-        const discussionIds = post.discussions;
-        const discussionRequests = discussionIds.map((request) => {
-          return fetch(`/api/discussions?id=${request}`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
-        });
-
-        const rawDiscussions = await Promise.all(discussionRequests);
-        const parsedDiscussions = (await Promise.all(
-          rawDiscussions.map((ans) => ans.json()),
-        )) as Array<Discussion>;
-        setDiscussions(parsedDiscussions);
-
-        // get replies
-        const replyIds = parsedDiscussions.flatMap((disc) => disc.replies);
-        const replyRequests = replyIds.map((request) => {
-          return fetch(`/api/replies?id=${request}`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
-        });
-
-        const rawReplies = await Promise.all(replyRequests);
-        const parsedReplies = (await Promise.all(
-          rawReplies.map((ans) => ans.json()),
-        )) as Array<Reply>;
-        setReplies(parsedReplies);
-
         // get media
-        const mediaIds = post.media;
-        const mediaRequests = mediaIds.map((request) => {
+        const mediaIds = post?.media;
+        const mediaRequests = mediaIds?.map((request) => {
           return fetch(`/api/multimedia?id=${request}`, {
             method: "GET",
             headers: {
@@ -123,7 +87,7 @@ export default function Page({ params }: Params) {
           });
         });
 
-        const rawMedia = await Promise.all(mediaRequests);
+        const rawMedia = await Promise.all(mediaRequests ?? []);
         const parsedMedia = (await Promise.all(
           rawMedia.map((ans) => ans.json()),
         )) as Array<string>;
@@ -138,21 +102,17 @@ export default function Page({ params }: Params) {
 
   const emails: Array<string> = _uniq(
     [
-      ...(discussions ?? []).map((discussion) => discussion.author),
-      ...(replies ?? []).map((reply) => reply.author),
+      ...(discussions ?? [])
+        .filter((discussion) => discussion?.author)
+        .map((discussion) => discussion?.author as string),
+      ...(replies ?? [])
+        .filter((reply) => reply?.author)
+        .map((reply) => reply?.author as string),
     ].concat(post?.author ? [post?.author] : []),
   );
 
   const authors = useGetAccounts({ emails });
   const loadingExtraData = authors.some((val) => val.isLoading);
-
-  useEffect(() => {
-    const newMap = new Map();
-    authors.map((value, index) => {
-      newMap.set(emails[index], value);
-    });
-    setAccounts(newMap);
-  }, [id, discussions, post, replies]);
 
   // finding headings from data
   useEffect(() => {
@@ -168,13 +128,13 @@ export default function Page({ params }: Params) {
 
   // post new discussion
 
-  async function postNewDiscussion(content: string) {
+  async function postNewDiscussion(content: string | null) {
     setExtraLoader(true);
     if (!session || !session.user || !session.user.email) return;
     if (!post) return;
     const new_discussion: Discussion = {
       author: session.user.email,
-      content,
+      content: content ?? "",
       id: uuid(),
       replies: [],
     };
@@ -182,86 +142,54 @@ export default function Page({ params }: Params) {
       ? [...discussions, new_discussion]
       : [new_discussion];
 
-    setDiscussions(() => new_discussions);
-
     try {
-      // create new discussion
-      await fetch(`/api/discussions`, {
-        method: "POST",
-        body: JSON.stringify(new_discussion),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      createNewDiscussion(new_discussion);
 
       // link this discussion to the post
-
-      await fetch(`/api/posts?id=${post.id}&field=discussions`, {
-        method: "PUT",
-        body: JSON.stringify({
-          discussions: new_discussions.map((disc) => disc.id),
-        }),
-        headers: {
-          "Content-Type": "application/json",
+      updatePost({
+        id: post.id,
+        field: "discussions",
+        newPost: {
+          discussions: new_discussions
+            .filter((disc) => disc?.id)
+            .map((disc) => disc?.id as string),
         },
       });
-      setExtraLoader(false);
     } catch (e) {
       console.log(`Error occurred: ${e}`);
     }
   }
 
-  async function postNewReply(content: string, discussionId: string) {
+  async function postNewReply(content: string | null, discussionId?: string) {
     setExtraLoader(true);
     if (!session || !session.user || !session.user.email) return;
     if (!post) return;
     const reply: Reply = {
       author: session.user.email,
-      content,
+      content: content ?? "",
       id: uuid(),
     };
 
     const discussion_replies = replies?.filter((reply) =>
       discussions
-        ?.filter((disc) => disc.id == discussionId)[0]
-        .replies.includes(reply.id),
+        ?.filter((disc) => disc?.id == discussionId)[0]
+        ?.replies.includes(reply?.id ?? ""),
     );
     const new_replies = discussion_replies
       ? [...discussion_replies, reply]
       : [reply];
 
-    replies && setReplies(() => [...replies, reply]);
-
-    if (!discussions) return;
-    let updated_discussion = discussions.filter(
-      (disc) => disc.id == discussionId,
-    )[0];
-    updated_discussion.replies = new_replies.map((rep) => rep.id);
-    discussions &&
-      setDiscussions([
-        ...discussions.filter((disc) => disc.id != discussionId),
-        updated_discussion,
-      ]);
-
     try {
-      // create new reply
-      await fetch(`/api/replies`, {
-        method: "POST",
-        body: JSON.stringify(reply),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      createNewReply(reply);
 
       // link this reply to the discussion
-
-      await fetch(`/api/discussions?id=${discussionId}&field=replies`, {
-        method: "PUT",
-        body: JSON.stringify({
-          replies: new_replies.map((reply) => reply.id),
-        }),
-        headers: {
-          "Content-Type": "application/json",
+      updateDiscussion({
+        id: discussionId,
+        field: "replies",
+        newDiscussion: {
+          replies: new_replies
+            .filter((reply) => reply?.id)
+            .map((reply) => reply?.id as string),
         },
       });
       setExtraLoader(false);
@@ -341,7 +269,7 @@ export default function Page({ params }: Params) {
               size={18}
             />
           </div>
-          {post.author == session?.user?.email && (
+          {post?.author == session?.user?.email && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -360,7 +288,7 @@ export default function Page({ params }: Params) {
               </Tooltip>
             </TooltipProvider>
           )}
-          {post.author != session?.user?.email && (
+          {post?.author != session?.user?.email && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -411,7 +339,7 @@ export default function Page({ params }: Params) {
               </div>
             </div>
             <div className="my-3 flex flex-[1] flex-wrap items-center justify-center text-center text-slate-200 sm:flex-col sm:justify-start">
-              {post.tags?.map((tag) => {
+              {post?.tags?.map((tag) => {
                 return (
                   <div
                     key={tag}
@@ -423,11 +351,11 @@ export default function Page({ params }: Params) {
               })}
             </div>
             <div>
-              {post.media.length != 0 && <h2 className="text-2xl">Media</h2>}
-              {post.media.length === 0 ? (
+              {post?.media.length != 0 && <h2 className="text-2xl">Media</h2>}
+              {post?.media.length === 0 ? (
                 ""
               ) : (
-                <DisplayMedia mediaIds={post.media} />
+                <DisplayMedia mediaIds={post?.media ?? []} />
               )}
             </div>
           </div>
@@ -435,38 +363,33 @@ export default function Page({ params }: Params) {
         <div>
           <div className="mx-auto my-5 h-[2px] w-[90%] bg-slate-600"></div>
           <h2 className="mb-3 mt-6 text-4xl sm:text-center">Discussions:-</h2>
-          {post &&
-            accounts &&
-            discussions &&
-            replies &&
-            discussions.map((discussion) => {
-              return (
-                <div key={discussion.id}>
-                  <Answer
-                    key={discussion.id}
-                    author={accounts.get(discussion.author)}
-                    content={discussion.content}
-                    replies={
-                      replies &&
-                      replies.filter((reply) =>
-                        discussion.replies.includes(reply.id),
-                      )
-                    }
-                    authors={accounts}
+          {discussions.map((discussion, index) => {
+            return (
+              <div key={discussion?.id ?? index}>
+                <Answer
+                  authorEmail={discussion?.author}
+                  content={discussion?.content}
+                  replies={
+                    replies &&
+                    (replies.filter(
+                      (reply) => discussion?.replies.includes(reply?.id ?? ""),
+                      // TODO: Are you sure?
+                    ) as DoubtReply[])
+                  }
+                />
+                <div className="text-right lg:mr-10">
+                  <GetMarkdownInput
+                    role="minor"
+                    minorId={discussion?.id}
+                    onUpload={postNewReply}
+                    triggerMessage="Reply"
+                    header="Replying to a discussion"
+                    markdown
                   />
-                  <div className="text-right lg:mr-10">
-                    <GetMarkdownInput
-                      role="minor"
-                      minorId={discussion.id}
-                      onUpload={postNewReply}
-                      triggerMessage="Reply"
-                      header="Replying to a discussion"
-                      markdown
-                    />
-                  </div>
                 </div>
-              );
-            })}
+              </div>
+            );
+          })}
         </div>
         <div className="mx-auto w-fit">
           <GetMarkdownInput

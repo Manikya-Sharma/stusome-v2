@@ -1,6 +1,6 @@
 import ShowMarkdown from "../ShowMarkdown";
 import ShowProfileImage from "../ShowProfileImage";
-import { useGetAccount } from "../queries/account";
+import { useGetAccount } from "../queries/accounts";
 
 type Props = {
   authorEmail: string | undefined;
@@ -14,7 +14,7 @@ export default function MainQuestion({ authorEmail, content }: Props) {
       <div className="relative overflow-hidden rounded-lg border border-indigo-200 bg-indigo-100 p-4 shadow-md dark:border-indigo-600 dark:bg-indigo-950">
         <div className="flex items-center gap-2">
           <div>
-            <ShowProfileImage data={author} />
+            <ShowProfileImage authorEmail={author?.email} />
           </div>
           <h2 className="text-xl dark:text-slate-300">{author?.name}</h2>
         </div>

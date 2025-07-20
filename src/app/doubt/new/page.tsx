@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 import { useSession } from "next-auth/react";
 import { v4 as uuid } from "uuid";
 import { useRouter } from "next/navigation";
-import { useGetAccount, usePutAccount } from "@/components/queries/account";
+import { useGetAccount, usePutAccount } from "@/components/queries/accounts";
 import { usePostDoubt } from "@/components/queries/doubts";
 
 type formType = z.infer<typeof doubtSchema>;

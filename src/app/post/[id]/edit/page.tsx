@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { z } from "zod";
 import { postSchema } from "@/types/schemas";
 import Editor from "@/components/Editor";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { Post } from "@/types/post";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -16,14 +16,14 @@ import DisplayMedia from "@/components/DisplayMedia";
 type formType = z.infer<typeof postSchema>;
 
 type Params = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 const App = ({ params }: Params) => {
   const [loading, setLoading] = useState<boolean>(true);
-  const id = params.id;
+  const { id } = use(params);
   const { data: session } = useSession();
   const router = useRouter();
 

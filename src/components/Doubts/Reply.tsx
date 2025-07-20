@@ -1,4 +1,4 @@
-import { useGetAccount } from "../queries/account";
+import { useGetAccount } from "../queries/accounts";
 import ShowMarkdown from "../ShowMarkdown";
 import ShowProfileImage from "../ShowProfileImage";
 
@@ -10,7 +10,7 @@ export default function Reply({ reply }: { reply: DoubtReply }) {
       <div>
         <div className="flex items-center gap-2">
           <div>
-            <ShowProfileImage data={author} small={true} />
+            <ShowProfileImage authorEmail={author?.email} small={true} />
           </div>
           <h2 className="text-xl dark:text-slate-400">{author?.name}</h2>
         </div>
