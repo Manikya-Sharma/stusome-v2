@@ -29,7 +29,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
-import { useGetAccount, useGetAccounts } from "@/components/queries/accounts";
+import { useGetAccount } from "@/components/queries/accounts";
 import {
   useGetDiscussions,
   usePostDiscussion,
@@ -40,7 +40,6 @@ import {
   usePostReply,
 } from "@/components/queries/doubt_replies";
 import { useGetPost, usePutPost } from "@/components/queries/posts";
-import { uniq as _uniq } from "lodash";
 import { DoubtReply } from "@/types/doubt";
 
 type Params = {
@@ -53,25 +52,40 @@ export default function Page({ params }: Params) {
 
   // fetching data
   const { id } = use(params);
-  const [extraLoader, setExtraLoader] = useState<boolean>(true);
   const [media, setMedia] = useState<Array<string>>([]);
   const [headings, setHeadings] = useState<string[]>([]);
 
-  const { data: post, isLoading: loading } = useGetPost({ id });
-  const { mutate: updatePost } = usePutPost();
+  const { data: post, isLoading: isLoadingPost } = useGetPost({ id });
+  const { mutate: updatePost, isPending: isUpdatingPost } = usePutPost({
+    onError: () => toast.error("Could not update the relevant post"),
+  });
   const discussionIds = post?.discussions;
 
   const discussionsQuery = useGetDiscussions({ ids: discussionIds ?? [] });
   const discussions = discussionsQuery.map((disc) => disc.data);
-  const { mutate: updateDiscussion } = usePutDiscussion();
-  const { mutate: createNewDiscussion } = usePostDiscussion();
+  const isLoadingDiscussions = discussionsQuery.some((disc) => disc.isLoading);
+  const { mutate: updateDiscussion, isPending: isUpdatingDiscussion } =
+    usePutDiscussion({
+      onError: () => toast.error("Could not update the relevant discussion"),
+    });
+  const { mutate: createNewDiscussion, isPending: isCreatingDiscussion } =
+    usePostDiscussion({
+      onSuccess: () => toast.success("Discussion created successfully"),
+      onError: () => toast.error("Could not create new discussion"),
+    });
 
   const replyIds = discussions.flatMap((disc) => disc?.replies);
   const repliesQuery = useGetReplies({ ids: replyIds });
   const replies = repliesQuery.map((reply) => reply.data);
-  const { mutate: createNewReply } = usePostReply();
+  const isLoadingReplies = repliesQuery.some((rep) => rep.isLoading);
+  const { mutate: createNewReply, isPending: isCreatingReply } = usePostReply({
+    onSuccess: () => toast.success("Reply created successfully"),
+    onError: () => toast.error("Reply could not be created"),
+  });
 
-  let { data: author } = useGetAccount({ email: post?.author });
+  let { data: author, isLoading: isLoadingAuthor } = useGetAccount({
+    email: post?.author,
+  });
 
   useEffect(() => {
     if (status === "loading") return;
@@ -93,27 +107,12 @@ export default function Page({ params }: Params) {
           rawMedia.map((ans) => ans.json()),
         )) as Array<string>;
         setMedia(parsedMedia);
-        setExtraLoader(false);
       } catch (e) {
         console.log(`Error: ${e}`);
       }
     }
     getData();
   }, [id, router, status, post?.media]);
-
-  const emails: Array<string> = _uniq(
-    [
-      ...(discussions ?? [])
-        .filter((discussion) => discussion?.author)
-        .map((discussion) => discussion?.author as string),
-      ...(replies ?? [])
-        .filter((reply) => reply?.author)
-        .map((reply) => reply?.author as string),
-    ].concat(post?.author ? [post?.author] : []),
-  );
-
-  const authors = useGetAccounts({ emails });
-  const loadingExtraData = authors.some((val) => val.isLoading);
 
   // finding headings from data
   useEffect(() => {
@@ -127,12 +126,8 @@ export default function Page({ params }: Params) {
     }
   }, [post]);
 
-  // post new discussion
-
   async function postNewDiscussion(content: string | null) {
-    setExtraLoader(true);
-    if (!session || !session.user || !session.user.email) return;
-    if (!post) return;
+    if (!session || !session.user || !session.user.email || !post) return;
     const new_discussion: Discussion = {
       author: session.user.email,
       content: content ?? "",
@@ -143,28 +138,22 @@ export default function Page({ params }: Params) {
       ? [...discussions, new_discussion]
       : [new_discussion];
 
-    try {
-      createNewDiscussion(new_discussion);
+    createNewDiscussion(new_discussion);
 
-      // link this discussion to the post
-      updatePost({
-        id: post.id,
-        field: "discussions",
-        newPost: {
-          discussions: new_discussions
-            .filter((disc) => disc?.id)
-            .map((disc) => disc?.id as string),
-        },
-      });
-    } catch (e) {
-      console.log(`Error occurred: ${e}`);
-    }
+    // link this discussion to the post
+    updatePost({
+      id: post.id,
+      field: "discussions",
+      newPost: {
+        discussions: new_discussions
+          .filter((disc) => disc?.id)
+          .map((disc) => disc?.id as string),
+      },
+    });
   }
 
   async function postNewReply(content: string | null, discussionId?: string) {
-    setExtraLoader(true);
     if (!session || !session.user || !session.user.email) return;
-    if (!post) return;
     const reply: Reply = {
       author: session.user.email,
       content: content ?? "",
@@ -180,42 +169,34 @@ export default function Page({ params }: Params) {
       ? [...discussion_replies, reply]
       : [reply];
 
-    try {
-      createNewReply(reply);
+    createNewReply(reply);
 
-      // link this reply to the discussion
-      updateDiscussion({
-        id: discussionId,
-        field: "replies",
-        newDiscussion: {
-          replies: new_replies
-            .filter((reply) => reply?.id)
-            .map((reply) => reply?.id as string),
-        },
-      });
-      setExtraLoader(false);
-    } catch (e) {
-      console.log(`Error occurred: ${e}`);
-    }
+    // link this reply to the discussion
+    updateDiscussion({
+      id: discussionId,
+      field: "replies",
+      newDiscussion: {
+        replies: new_replies
+          .filter((reply) => reply?.id)
+          .map((reply) => reply?.id as string),
+      },
+    });
   }
 
   async function handleChat() {
     if (!session || !session.user || !session.user.email || !post) {
       return;
     }
-    setExtraLoader(true);
     const rawAccount = await fetch(
       `/api/chat/user?email=${session.user.email}`,
     );
     const rawAccount2 = await fetch(`/api/chat/user?email=${post.author}`);
     if (!rawAccount.ok) {
       toast.error("You have not opted in for chats yet!");
-      setExtraLoader(false);
       return;
     }
     if (!rawAccount2.ok) {
       toast.error("The post author does not accept chats");
-      setExtraLoader(false);
       return;
     }
 
@@ -251,16 +232,17 @@ export default function Page({ params }: Params) {
           toast.error("Could not begin your chat with author");
         }
       }
-    setExtraLoader(false);
   }
   // menu for small screens
   const [openMenu, setOpenMenu] = useState<boolean>(false);
 
-  return loading ? (
+  return isLoadingPost ? (
     <Skeleton />
   ) : (
     <div className="min-h-screen">
-      <IndeterminateLoader loading={loadingExtraData || extraLoader} />
+      <IndeterminateLoader
+        loading={isLoadingAuthor || isLoadingDiscussions || isLoadingReplies}
+      />
       <div className="scroll-smooth p-4 transition-colors duration-200">
         <nav className="fixed left-2 top-2 z-[100] flex h-fit max-h-[50px] items-center justify-start rounded-lg backdrop-blur-md">
           <div className="py-1 pl-3 md:hidden">
@@ -279,6 +261,12 @@ export default function Page({ params }: Params) {
                     onClick={() => {
                       router.push(`/post/${id}/edit`);
                     }}
+                    disabled={
+                      isCreatingDiscussion ||
+                      isUpdatingDiscussion ||
+                      isCreatingReply ||
+                      isUpdatingPost
+                    }
                   >
                     <Pen />
                   </Button>
@@ -298,6 +286,12 @@ export default function Page({ params }: Params) {
                     onClick={() => {
                       handleChat();
                     }}
+                    disabled={
+                      isCreatingDiscussion ||
+                      isUpdatingDiscussion ||
+                      isCreatingReply ||
+                      isUpdatingPost
+                    }
                   >
                     <MessageCircle />
                   </Button>
@@ -312,7 +306,7 @@ export default function Page({ params }: Params) {
         {/* Title */}
         <div className="relative mb-5 mt-10 dark:z-10 md:mt-0">
           <h1 className="text-center text-5xl">{post?.title}</h1>
-          {!loading && (
+          {!isLoadingAuthor && (
             <cite className="mt-3 block text-center text-lg text-muted-foreground">
               - {author && author.name}
             </cite>
@@ -336,7 +330,7 @@ export default function Page({ params }: Params) {
               <div
                 className={"markdown-wrapper transition-colors duration-200 "}
               >
-                {post && <ShowMarkdown data={post.content} />}
+                <ShowMarkdown data={post?.content ?? ""} />
               </div>
             </div>
             <div className="my-3 flex flex-[1] flex-wrap items-center justify-center text-center text-slate-200 sm:flex-col sm:justify-start">
@@ -385,6 +379,12 @@ export default function Page({ params }: Params) {
                     onUpload={postNewReply}
                     triggerMessage="Reply"
                     header="Replying to a discussion"
+                    disabled={
+                      isCreatingDiscussion ||
+                      isUpdatingDiscussion ||
+                      isCreatingReply ||
+                      isUpdatingPost
+                    }
                     markdown
                   />
                 </div>
@@ -399,6 +399,12 @@ export default function Page({ params }: Params) {
             header="Enter your new discussion"
             markdown
             onUpload={postNewDiscussion}
+            disabled={
+              isCreatingDiscussion ||
+              isUpdatingDiscussion ||
+              isCreatingReply ||
+              isUpdatingPost
+            }
           />
         </div>
       </div>

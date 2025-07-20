@@ -25,23 +25,33 @@ const App = () => {
   });
 
   const { data: account } = useGetAccount({ email: session?.user?.email });
-  const { mutate: updateAccount } = usePutAccount({
-    email: session?.user?.email,
+  const { mutate: updateAccount, isPending: isUpdatingAccount } = usePutAccount(
+    {
+      email: session?.user?.email,
+      onError: () => toast.error("Could not link the doubt to your account"),
+    },
+  );
+  const { mutate: createDoubt, isPending: isCreatingDoubt } = usePostDoubt({
+    onError: () =>
+      toast.error("Could not post new doubt, please try again later"),
+    onSuccess: () => {
+      toast.success("New doubt created successfully");
+      router.replace("/dashboard");
+    },
   });
-  const { mutate: createDoubt } = usePostDoubt();
 
   function changeContent(newContent: string) {
-    formState.content = newContent;
+    setFormState({ ...formState, content: newContent });
   }
   function changeTitle(newTitle: string) {
-    formState.title = newTitle;
+    setFormState({ ...formState, title: newTitle });
   }
 
   function changeTags(newTags: Array<string>) {
-    formState.tags = newTags;
+    setFormState({ ...formState, tags: newTags });
   }
 
-  async function postDoubt() {
+  function postDoubt() {
     if (session && session.user && session.user.email) {
       if (formState.title.trim().length === 0) {
         toast.error("Missing title");
@@ -59,18 +69,13 @@ const App = () => {
         answers: [],
         id: newId,
       };
-      try {
-        createDoubt(doubt);
-        const old_doubts = account?.doubts;
-        const new_doubts = [...(old_doubts ?? []), newId];
-        updateAccount({
-          field: "doubts",
-          newAccount: { doubts: new_doubts },
-        });
-        router.replace(`/doubt/${newId}`);
-      } catch (e) {
-        console.log(`An error occurred: ${e}`);
-      }
+      createDoubt(doubt);
+      const old_doubts = account?.doubts;
+      const new_doubts = [...(old_doubts ?? []), newId];
+      updateAccount({
+        field: "doubts",
+        newAccount: { doubts: new_doubts },
+      });
     }
   }
 
@@ -87,13 +92,8 @@ const App = () => {
           className="my-10 block text-2xl"
           size="lg"
           type="submit"
-          onClick={() => {
-            toast.promise(postDoubt(), {
-              error: "Unable to post your doubt",
-              loading: "Posting new doubt",
-              success: "Doubt posted successfully",
-            });
-          }}
+          onClick={() => postDoubt()}
+          disabled={isCreatingDoubt || isUpdatingAccount}
         >
           Post the doubt
         </Button>

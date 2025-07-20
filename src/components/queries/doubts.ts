@@ -1,7 +1,13 @@
 import { Doubt } from "@/types/doubt";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 
-export const usePostDoubt = () => {
+export const usePostDoubt = ({
+  onSuccess,
+  onError,
+}: {
+  onSuccess?: () => void;
+  onError?: () => void;
+} = {}) => {
   return useMutation({
     mutationFn: async (newDoubt: Doubt) => {
       await fetch("/api/doubts", {
@@ -12,6 +18,8 @@ export const usePostDoubt = () => {
         body: JSON.stringify(newDoubt),
       });
     },
+    onSuccess,
+    onError,
   });
 };
 
@@ -42,7 +50,13 @@ export const useGetDoubts = ({
   });
 };
 
-export const usePutDoubt = () => {
+export const usePutDoubt = ({
+  onError,
+  onSuccess,
+}: {
+  onSuccess?: () => void;
+  onError?: () => void;
+}) => {
   return useMutation({
     mutationFn: async ({
       id,
@@ -61,6 +75,8 @@ export const usePutDoubt = () => {
         body: JSON.stringify(newDoubt),
       });
     },
+    onSuccess,
+    onError,
   });
 };
 

@@ -1,58 +1,53 @@
 "use client";
 
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { v4 as uuid } from "uuid";
-import toast from "react-hot-toast";
-import { Post } from "@/types/post";
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import IndeterminateLoader from "@/components/IndeterminateLoader";
 import { useGetAccount, usePutAccount } from "@/components/queries/accounts";
 import { useGetDoubts } from "@/components/queries/doubts";
+import { useGetPosts, usePostPost } from "@/components/queries/posts";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Post } from "@/types/post";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { v4 as uuid } from "uuid";
 
 const Page = () => {
   const { data: session, status } = useSession();
-  const [loading, setLoading] = useState<boolean>(true);
-
-  const { data: account } = useGetAccount({ email: session?.user?.email });
-  const { mutate: updateAccount } = usePutAccount({
-    email: session?.user?.email,
-  });
 
   const router = useRouter();
-
   if (status === "unauthenticated") {
     router.replace("/login?from=/dashboard");
   }
 
-  const [posts, setPosts] = useState<Array<Post>>([]);
+  const { data: account, isLoading: isLoadingAccount } = useGetAccount({
+    email: session?.user?.email,
+  });
+  const { mutate: updateAccount, isPending: isUpdatingAccount } = usePutAccount(
+    {
+      email: session?.user?.email,
+      onError: () => toast.error("Post could not be linked to your account"),
+    },
+  );
+
+  const postIds = account?.posts;
+  const fetchedPosts = useGetPosts({ ids: postIds ?? [] });
+  const posts = fetchedPosts.map((post) => post.data);
+  const isLoadingPosts = fetchedPosts.some((post) => post.isLoading);
+
   const doubtIds = account?.doubts;
   const fetchedDoubts = useGetDoubts({ ids: doubtIds ?? [] });
   const doubts = fetchedDoubts.map((doubt) => doubt.data);
+  const isLoadingDoubts = fetchedDoubts.some((doubt) => doubt.isLoading);
 
-  useEffect(() => {
-    if (account == null) return;
-    async function getPosts() {
-      if (!account) return;
-      const postIds = account.posts;
-      const requests = postIds.map((id) => {
-        return fetch(`/api/posts?id=${id}`, { cache: "no-cache" });
-      });
-      const responses = await Promise.all(requests);
-      const parsedResponses = (await Promise.all(
-        responses.map((response) => response.json()),
-      )) as Post[];
-      setPosts(parsedResponses.filter((post) => post != null));
-    }
-
-    async function getData() {
-      await Promise.all([getPosts()]);
-      setLoading(false);
-    }
-    getData();
-  }, [account]);
+  const { mutate: createNewPost, isPending: isCreatingNewPost } = usePostPost({
+    onError: () =>
+      toast.error("Unable to create new post, please try again later"),
+    onSuccess: () => {
+      toast.success("New post created successfully");
+      router.push("/dashboard");
+    },
+  });
 
   async function newPost() {
     if (session && session.user && session.user.email && account) {
@@ -68,28 +63,18 @@ const Page = () => {
         title: "",
         media: [],
       };
-      try {
-        await fetch("/api/posts", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(post),
-        });
-
-        const oldPosts = account.posts;
-        const new_posts = [...oldPosts, newId];
-        updateAccount({ field: "posts", newAccount: { posts: new_posts } });
-        router.push(`/post/${newId}/edit`);
-      } catch (e) {
-        console.log(`An error occurred: ${e}`);
-      }
+      createNewPost(post);
+      const oldPosts = account.posts;
+      const new_posts = [...oldPosts, newId];
+      updateAccount({ field: "posts", newAccount: { posts: new_posts } });
     }
   }
 
+  const isLoading = isLoadingAccount || isLoadingDoubts || isLoadingPosts;
+
   return (
     <main>
-      {loading && <IndeterminateLoader loading={loading} />}
+      {isLoading && <IndeterminateLoader loading={isLoading} />}
       <div>
         <div className="container mx-auto p-4">
           {posts.length !== 0 && (
@@ -100,14 +85,8 @@ const Page = () => {
                 </h2>
                 <Button
                   className="text-lg"
-                  onClick={() => {
-                    toast.promise(newPost(), {
-                      loading: "Creating new post",
-                      error: "Error occurred, Please try again later",
-                      success:
-                        "Created post successfully, please wait while we redirect",
-                    });
-                  }}
+                  onClick={() => newPost()}
+                  disabled={isCreatingNewPost || isUpdatingAccount}
                 >
                   Create New Post
                 </Button>
@@ -118,11 +97,11 @@ const Page = () => {
                   posts.map((post) => {
                     return (
                       <div
-                        key={post.id}
+                        key={post?.id}
                         className="relative my-5 cursor-pointer overflow-hidden rounded-lg bg-slate-200 p-4 py-5 transition-transform hover:scale-105 dark:bg-slate-800 lg:mx-3 lg:min-w-[20%] lg:max-w-[40%] lg:flex-1"
-                        onClick={() => router.push(`/post/${post.id}`)}
+                        onClick={() => router.push(`/post/${post?.id}`)}
                       >
-                        {post.published == false && (
+                        {post?.published == false && (
                           <Badge
                             variant={"secondary"}
                             className="absolute right-5 top-2"
@@ -131,9 +110,9 @@ const Page = () => {
                           </Badge>
                         )}
                         <h3 className="mb-2 text-xl font-semibold">
-                          {post.title}
+                          {post?.title}
                         </h3>
-                        <p>{post.content.slice(0, 150)} ...</p>
+                        <p>{post?.content.slice(0, 150)} ...</p>
                       </div>
                     );
                   })}
@@ -152,6 +131,7 @@ const Page = () => {
                   onClick={() => {
                     router.push("/doubt/new");
                   }}
+                  disabled={isUpdatingAccount}
                 >
                   Create New Doubt
                 </Button>

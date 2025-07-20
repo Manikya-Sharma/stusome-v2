@@ -17,6 +17,7 @@ import { useGetDoubt, usePutDoubt } from "@/components/queries/doubts";
 import { DoubtAnswer, DoubtReply } from "@/types/doubt";
 import { useSession } from "next-auth/react";
 import { use, useMemo } from "react";
+import toast from "react-hot-toast";
 import { v4 as uuid } from "uuid";
 
 export default function Doubt({ params }: { params: Promise<{ id: string }> }) {
@@ -24,13 +25,23 @@ export default function Doubt({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
 
   const { data: doubt, isLoading: isLoadingDoubt } = useGetDoubt({ id });
-  const { mutate: updateDoubt } = usePutDoubt();
+  const { mutate: updateDoubt, isPending: isUpdatingDoubt } = usePutDoubt({
+    onError: () => toast.error("Could not update respective doubt"),
+  });
 
   const { mutate: createNewAnswer, isPending: isCreatingAnswer } =
-    usePostAnswer();
-  const { mutate: updateAnswer, isPending: isUpdatingAnswer } = usePutAnswer();
+    usePostAnswer({
+      onError: () => toast.error("Could not create new answer"),
+      onSuccess: () => toast.success("New answer created successfully"),
+    });
+  const { mutate: updateAnswer, isPending: isUpdatingAnswer } = usePutAnswer({
+    onError: () => toast.error("Could not update the respective answer"),
+  });
 
-  const { mutate: createNewReply } = usePostReply();
+  const { mutate: createNewReply, isPending: isCreatingReply } = usePostReply({
+    onError: () => toast.error("Could not post new reply"),
+    onSuccess: () => toast.success("New reply created successfully"),
+  });
 
   const answersQuery = useGetAnswers({ ids: doubt?.answers ?? [] });
   const answers = useMemo(
@@ -48,8 +59,8 @@ export default function Doubt({ params }: { params: Promise<{ id: string }> }) {
   const isLoadingReplies = repliesQuery.some((rep) => rep.isLoading);
 
   async function postNewAnswer(content: string | null) {
-    if (!session || !session.user || !session.user.email || !content) return;
-    if (!doubt) return;
+    if (!session || !session.user || !session.user.email || !content || !doubt)
+      return;
     const new_answer: DoubtAnswer = {
       author: session.user.email,
       content,
@@ -58,21 +69,16 @@ export default function Doubt({ params }: { params: Promise<{ id: string }> }) {
     };
     const new_answers = answers ? [...answers, new_answer] : [new_answer];
 
-    try {
-      // create new answer
-      createNewAnswer(new_answer);
+    createNewAnswer(new_answer);
 
-      // link this answer to the doubt
-      updateDoubt({
-        id: doubt.id,
-        field: "answers",
-        newDoubt: {
-          answers: new_answers.filter((ans) => ans).map((ans) => ans?.id ?? ""),
-        },
-      });
-    } catch (e) {
-      console.log(`Error occurred: ${e}`);
-    }
+    // link this answer to the doubt
+    updateDoubt({
+      id: doubt.id,
+      field: "answers",
+      newDoubt: {
+        answers: new_answers.filter((ans) => ans).map((ans) => ans?.id ?? ""),
+      },
+    });
   }
 
   async function postNewReply(
@@ -80,7 +86,7 @@ export default function Doubt({ params }: { params: Promise<{ id: string }> }) {
     answerId: string | undefined,
   ) {
     if (!session || !session.user || !session.user.email || !content) return;
-    if (!doubt) return;
+
     const reply: DoubtReply = {
       author: session.user.email,
       content,
@@ -94,7 +100,6 @@ export default function Doubt({ params }: { params: Promise<{ id: string }> }) {
     );
     const new_replies = answer_replies ? [...answer_replies, reply] : [reply];
 
-    if (!answers) return;
     let updated_answer = answers.filter((ans) => ans?.id == answerId)[0];
     if (updated_answer) {
       updated_answer.replies = new_replies
@@ -102,23 +107,18 @@ export default function Doubt({ params }: { params: Promise<{ id: string }> }) {
         .filter((rep) => rep) as string[];
     }
 
-    try {
-      // create new reply
-      createNewReply(reply);
+    createNewReply(reply);
 
-      // link this reply to the answer
-      updateAnswer({
-        id: answerId,
-        field: "replies",
-        newAnswer: {
-          replies: new_replies
-            .map((reply) => reply?.id ?? null)
-            .filter((rep) => rep) as string[],
-        },
-      });
-    } catch (e) {
-      console.log(`Error occurred: ${e}`);
-    }
+    // link this reply to the answer
+    updateAnswer({
+      id: answerId,
+      field: "replies",
+      newAnswer: {
+        replies: new_replies
+          .map((reply) => reply?.id ?? null)
+          .filter((rep) => rep) as string[],
+      },
+    });
   }
 
   return (
@@ -151,41 +151,48 @@ export default function Doubt({ params }: { params: Promise<{ id: string }> }) {
 
         {/* <!-- Doubts Section --> */}
 
-        {doubt &&
-          answers &&
-          replies &&
-          answers.map((answer) => {
-            return (
-              <div key={answer?.id}>
-                <Answer
-                  key={answer?.id}
-                  authorEmail={answer?.author}
-                  content={answer?.content}
-                  replies={
-                    replies.filter(
-                      (reply) => answer?.replies.includes(reply?.id ?? ""),
-                      // BUG: Are you sure about type inference?
-                    ) as DoubtReply[]
+        {answers.map((answer) => {
+          return (
+            <div key={answer?.id}>
+              <Answer
+                key={answer?.id}
+                authorEmail={answer?.author}
+                content={answer?.content}
+                replies={
+                  replies.filter(
+                    (reply) => answer?.replies.includes(reply?.id ?? ""),
+                    // TODO: Are you sure about type inference?
+                  ) as DoubtReply[]
+                }
+              />
+              <div className="text-right lg:mr-10">
+                <GetMarkdownInput
+                  disabled={
+                    isUpdatingAnswer ||
+                    isUpdatingDoubt ||
+                    isCreatingAnswer ||
+                    isCreatingReply
                   }
+                  role="minor"
+                  minorId={answer?.id}
+                  onUpload={postNewReply}
+                  triggerMessage="Reply"
+                  header="Replying to an answer"
+                  markdown
                 />
-                <div className="text-right lg:mr-10">
-                  <GetMarkdownInput
-                    disabled={isUpdatingAnswer}
-                    role="minor"
-                    minorId={answer?.id}
-                    onUpload={postNewReply}
-                    triggerMessage="Reply"
-                    header="Replying to an answer"
-                    markdown
-                  />
-                </div>
               </div>
-            );
-          })}
+            </div>
+          );
+        })}
 
         <div className="mx-auto my-5 w-fit">
           <GetMarkdownInput
-            disabled={isCreatingAnswer}
+            disabled={
+              isUpdatingAnswer ||
+              isUpdatingDoubt ||
+              isCreatingAnswer ||
+              isCreatingReply
+            }
             onUpload={postNewAnswer}
             role="major"
             triggerMessage="New Answer"

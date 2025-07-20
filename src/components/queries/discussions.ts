@@ -1,7 +1,13 @@
 import { Discussion } from "@/types/post";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 
-export const usePostDiscussion = () => {
+export const usePostDiscussion = ({
+  onSuccess,
+  onError,
+}: {
+  onSuccess?: () => void;
+  onError?: () => void;
+} = {}) => {
   return useMutation({
     mutationFn: async (newDiscussion: Discussion) => {
       await fetch("/api/discussions", {
@@ -12,6 +18,8 @@ export const usePostDiscussion = () => {
         body: JSON.stringify(newDiscussion),
       });
     },
+    onSuccess,
+    onError,
   });
 };
 
@@ -42,7 +50,13 @@ export const useGetDiscussions = ({
   });
 };
 
-export const usePutDiscussion = () => {
+export const usePutDiscussion = ({
+  onSuccess,
+  onError,
+}: {
+  onSuccess?: () => void;
+  onError?: () => void;
+} = {}) => {
   return useMutation({
     mutationFn: async ({
       id,
@@ -61,5 +75,7 @@ export const usePutDiscussion = () => {
         body: JSON.stringify(newDiscussion),
       });
     },
+    onSuccess,
+    onError,
   });
 };

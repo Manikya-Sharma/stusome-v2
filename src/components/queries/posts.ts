@@ -1,7 +1,13 @@
 import { Post } from "@/types/post";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 
-export const usePostPost = () => {
+export const usePostPost = ({
+  onSuccess,
+  onError,
+}: {
+  onSuccess?: () => void;
+  onError?: () => void;
+} = {}) => {
   return useMutation({
     mutationFn: async (newPost: Post) => {
       await fetch("/api/posts", {
@@ -12,6 +18,8 @@ export const usePostPost = () => {
         body: JSON.stringify(newPost),
       });
     },
+    onSuccess,
+    onError,
   });
 };
 
@@ -42,7 +50,13 @@ export const useGetPosts = ({
   });
 };
 
-export const usePutPost = () => {
+export const usePutPost = ({
+  onSuccess,
+  onError,
+}: {
+  onSuccess?: () => void;
+  onError?: () => void;
+} = {}) => {
   return useMutation({
     mutationFn: async ({
       id,
@@ -50,7 +64,7 @@ export const usePutPost = () => {
       newPost,
     }: {
       id: string | null | undefined;
-      field:
+      field?:
         | "discussions"
         | "title"
         | "author"
@@ -68,10 +82,18 @@ export const usePutPost = () => {
         body: JSON.stringify(newPost),
       });
     },
+    onSuccess,
+    onError,
   });
 };
 
-export const useDeletePost = () => {
+export const useDeletePost = ({
+  onSuccess,
+  onError,
+}: {
+  onSuccess?: () => void;
+  onError?: () => void;
+} = {}) => {
   return useMutation({
     mutationFn: async ({ id }: { id: string | null | undefined }) => {
       await fetch(`/api/posts/?id=${id}`, {
@@ -81,6 +103,8 @@ export const useDeletePost = () => {
         },
       });
     },
+    onSuccess,
+    onError,
   });
 };
 

@@ -1,7 +1,13 @@
 import { DoubtAnswer } from "@/types/doubt";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 
-export const usePostAnswer = () => {
+export const usePostAnswer = ({
+  onSuccess,
+  onError,
+}: {
+  onSuccess?: () => void;
+  onError?: () => void;
+} = {}) => {
   return useMutation({
     mutationFn: async (newAnswer: DoubtAnswer) => {
       await fetch("/api/answers", {
@@ -12,6 +18,8 @@ export const usePostAnswer = () => {
         body: JSON.stringify(newAnswer),
       });
     },
+    onSuccess,
+    onError,
   });
 };
 
@@ -42,7 +50,13 @@ export const useGetAnswers = ({
   });
 };
 
-export const usePutAnswer = () => {
+export const usePutAnswer = ({
+  onSuccess,
+  onError,
+}: {
+  onSuccess?: () => void;
+  onError?: () => void;
+} = {}) => {
   return useMutation({
     mutationFn: async ({
       id,
@@ -61,5 +75,7 @@ export const usePutAnswer = () => {
         body: JSON.stringify(newAnswer),
       });
     },
+    onSuccess,
+    onError,
   });
 };

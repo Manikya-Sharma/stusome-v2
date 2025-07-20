@@ -1,7 +1,13 @@
 import { Account } from "@/types/user";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 
-export const usePostAccount = () => {
+export const usePostAccount = ({
+  onSuccess,
+  onError,
+}: {
+  onSuccess?: () => void;
+  onError?: () => void;
+} = {}) => {
   return useMutation({
     mutationFn: async (newAccount: Account) => {
       await fetch("/api/accounts", {
@@ -12,6 +18,8 @@ export const usePostAccount = () => {
         body: JSON.stringify(newAccount),
       });
     },
+    onSuccess,
+    onError,
   });
 };
 
@@ -44,8 +52,12 @@ export const useGetAccounts = ({ emails }: { emails: string[] }) => {
 
 export const usePutAccount = ({
   email,
+  onSuccess,
+  onError,
 }: {
   email: string | null | undefined;
+  onSuccess?: () => void;
+  onError?: () => void;
 }) => {
   return useMutation({
     mutationFn: async ({
@@ -63,5 +75,7 @@ export const usePutAccount = ({
         body: JSON.stringify(newAccount),
       });
     },
+    onSuccess,
+    onError,
   });
 };

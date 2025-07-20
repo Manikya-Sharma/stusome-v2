@@ -1,7 +1,13 @@
 import { Reply } from "@/types/post";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 
-export const usePostReply = () => {
+export const usePostReply = ({
+  onSuccess,
+  onError,
+}: {
+  onSuccess?: () => void;
+  onError?: () => void;
+} = {}) => {
   return useMutation({
     mutationFn: async (newReply: Reply) => {
       await fetch("/api/replies", {
@@ -12,6 +18,8 @@ export const usePostReply = () => {
         body: JSON.stringify(newReply),
       });
     },
+    onSuccess,
+    onError,
   });
 };
 

@@ -1,17 +1,22 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import toast from "react-hot-toast";
-import { z } from "zod";
-import { postSchema } from "@/types/schemas";
+import DisplayMedia from "@/components/DisplayMedia";
 import Editor from "@/components/Editor";
-import { use, useEffect, useState } from "react";
-import { Post } from "@/types/post";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import IndeterminateLoader from "@/components/IndeterminateLoader";
 import Media from "@/components/Media";
-import DisplayMedia from "@/components/DisplayMedia";
+import {
+  useDeletePost,
+  useGetPost,
+  usePutPost,
+} from "@/components/queries/posts";
+import { Button } from "@/components/ui/button";
+import { Post } from "@/types/post";
+import { postSchema } from "@/types/schemas";
+import { useSession } from "next-auth/react";
+import { notFound, useRouter } from "next/navigation";
+import { use, useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { z } from "zod";
 
 type formType = z.infer<typeof postSchema>;
 
@@ -22,7 +27,6 @@ type Params = {
 };
 
 const App = ({ params }: Params) => {
-  const [loading, setLoading] = useState<boolean>(true);
   const { id } = use(params);
   const { data: session } = useSession();
   const router = useRouter();
@@ -35,45 +39,30 @@ const App = ({ params }: Params) => {
     media: [],
   });
 
-  // fetch data
+  const { data: postData, isLoading, isError } = useGetPost({ id });
+  const { mutate: updatePost, isPending: isUpdatingPost } = usePutPost({
+    onError: () => toast.error("Could not update, please try again later"),
+    onSuccess: () => {
+      toast.success("Operation executed successfully");
+      router.push(`/post/${id}`);
+    },
+  });
+  const { mutate: deletePost, isPending: isDeletingPost } = useDeletePost({
+    onSuccess: () => {
+      toast.success("Post deleted successfully");
+      router.replace("/dashboard");
+    },
+    onError: () => toast.error("Could not delete post, please try again later"),
+  });
+
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const rawPost = await fetch(`/api/posts?id=${id}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        const post = (await rawPost.json()) as Post;
-        if (post == null) {
-          throw new Error("Post not found");
-        }
-        if (post.author !== session?.user?.email) {
-          throw new Error("Unauthorized Access");
-        }
-        setFormState({
-          content: post.content,
-          title: post.title,
-          coverImgFull: post.coverImgFull,
-          tags: post.tags,
-          media: post.media,
-        });
-      } catch (e) {
-        console.log("An error ocurred in loading data:", e);
-        throw e;
-      } finally {
-        setLoading(false);
-      }
+    if (isLoading) return;
+    if (isError) {
+      return notFound();
     }
-    if (session?.user?.email && id) {
-      fetchData().catch((e) => {
-        // this situation cannot occur unless user is forcibly going to this url
-        toast.error(`${e}`);
-        router.back();
-      });
-    }
-  }, [id, session?.user?.email, router]);
+    if (!postData) return;
+    setFormState(postData);
+  }, [postData, isLoading, isError, setFormState]);
 
   function changeContent(newContent: string) {
     formState.content = newContent;
@@ -119,13 +108,7 @@ const App = ({ params }: Params) => {
       id,
     };
 
-    await fetch(`/api/posts?id=${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newPost),
-    });
+    updatePost({ id, newPost });
   }
 
   async function draft() {
@@ -141,30 +124,18 @@ const App = ({ params }: Params) => {
       id,
     };
 
-    await fetch(`/api/posts?id=${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newPost),
-    });
+    updatePost({ id, newPost });
   }
   async function del() {
     if (!session?.user?.email) {
       return;
     }
-
-    await fetch(`/api/posts?id=${id}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    deletePost({ id });
   }
 
   return (
     <div>
-      <IndeterminateLoader loading={loading} />
+      <IndeterminateLoader loading={isLoading} />
       <Editor
         state={formState}
         changeContent={changeContent}
@@ -186,6 +157,7 @@ const App = ({ params }: Params) => {
               success: "Posted successfully",
             });
           }}
+          disabled={isUpdatingPost || isDeletingPost}
         >
           Post
         </Button>
@@ -201,6 +173,7 @@ const App = ({ params }: Params) => {
               success: "Draft saved successfully",
             });
           }}
+          disabled={isUpdatingPost || isDeletingPost}
         >
           Save as Draft
         </Button>
@@ -217,6 +190,7 @@ const App = ({ params }: Params) => {
             });
             router.back();
           }}
+          disabled={isUpdatingPost || isDeletingPost}
         >
           Delete
         </Button>

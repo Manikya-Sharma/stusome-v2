@@ -70,7 +70,7 @@ const GetMarkdownInput = ({
                 maxRows={10}
                 minRows={4}
                 autoFocus
-                className="w-full rounded-md px-3 py-2"
+                className="w-full rounded-md bg-white px-3 py-2 text-black"
                 ref={textAreaRef}
                 value={content ?? ""}
                 onChange={() =>
