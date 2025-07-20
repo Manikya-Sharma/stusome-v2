@@ -1,10 +1,10 @@
 import { MongoClient } from "mongodb";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const client = new MongoClient(process.env.MONGODB_URI!);
 
-  const id = req.nextUrl.searchParams.get("id");
+  // const id = req.nextUrl.searchParams.get("id");
   try {
     await client.connect();
     const database = client.db("stusome");

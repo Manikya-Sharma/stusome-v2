@@ -6,12 +6,13 @@ import DoubtPreview from "@/components/DoubtPreview";
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { Post } from "@/types/post";
-import { useCallback, useEffect, useState } from "react";
+import type { Post } from "@/types/post";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetAccounts } from "@/components/queries/accounts";
 import { uniq as _uniq } from "lodash";
 import { useGetAllDoubts } from "@/components/queries/doubts";
 import { useGetAllPosts } from "@/components/queries/posts";
+import { Doubt } from "@/types/doubt";
 
 const Page = () => {
   const [authors, setAuthors] = useState<Map<
@@ -23,7 +24,7 @@ const Page = () => {
 
   const isLoading = isLoadingPosts || isLoadingDoubts;
 
-  const results: Array<Post | Doubt> = [];
+  const results: Array<Post | Doubt> = useMemo(() => [], []);
 
   const shuffle = useCallback(() => {
     if (!doubts || !posts) return;
@@ -45,7 +46,7 @@ const Page = () => {
         }
       }
     }
-  }, [doubts, posts]);
+  }, [doubts, posts, results]);
 
   shuffle();
 
@@ -70,7 +71,7 @@ const Page = () => {
       );
       return new_authors;
     });
-  }, []);
+  }, [_authors, emails]);
 
   // if (status === "unauthenticated") {
   //   router.replace("/login");

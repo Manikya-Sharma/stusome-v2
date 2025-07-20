@@ -9,12 +9,12 @@ import {
   usePostAnswer,
   usePutAnswer,
 } from "@/components/queries/answers";
-import { useGetDoubt, usePutDoubt } from "@/components/queries/doubts";
 import {
   useGetReplies,
   usePostReply,
 } from "@/components/queries/doubt_replies";
-import { uniq as _uniq } from "lodash";
+import { useGetDoubt, usePutDoubt } from "@/components/queries/doubts";
+import { DoubtAnswer, DoubtReply } from "@/types/doubt";
 import { useSession } from "next-auth/react";
 import { use, useMemo } from "react";
 import { v4 as uuid } from "uuid";
@@ -24,13 +24,13 @@ export default function Doubt({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
 
   const { data: doubt, isLoading: isLoadingDoubt } = useGetDoubt({ id });
-  const { mutate: updateDoubt, isPending: isUpdatingDoubt } = usePutDoubt();
+  const { mutate: updateDoubt } = usePutDoubt();
 
   const { mutate: createNewAnswer, isPending: isCreatingAnswer } =
     usePostAnswer();
   const { mutate: updateAnswer, isPending: isUpdatingAnswer } = usePutAnswer();
 
-  const { mutate: createNewReply, isPending: usCreatingReply } = usePostReply();
+  const { mutate: createNewReply } = usePostReply();
 
   const answersQuery = useGetAnswers({ ids: doubt?.answers ?? [] });
   const answers = useMemo(

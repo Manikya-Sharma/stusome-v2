@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, Check, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { Button } from "./ui/button";
 import {
   Tooltip,

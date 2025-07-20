@@ -11,6 +11,7 @@ import { v4 as uuid } from "uuid";
 import { useRouter } from "next/navigation";
 import { useGetAccount, usePutAccount } from "@/components/queries/accounts";
 import { usePostDoubt } from "@/components/queries/doubts";
+import { Doubt } from "@/types/doubt";
 
 type formType = z.infer<typeof doubtSchema>;
 

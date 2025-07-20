@@ -22,7 +22,7 @@ interface Props {
   header?: string;
   markdown?: boolean;
   minorId?: string;
-  onUpload: (content: string | null, minorId?: string) => void;
+  onUpload: (_content: string | null, _minorId?: string) => void;
   disabled?: boolean;
 }
 

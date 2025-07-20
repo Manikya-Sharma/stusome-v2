@@ -1,42 +1,22 @@
 import { z } from "zod";
 
 export const postSchema = z.object({
-  title: z
-    .string({
-      required_error: "Title is required",
-    })
-    .min(1, "title should not be empty"),
-  content: z
-    .string({
-      required_error: "No content provided!",
-    })
-    .min(1, "content should not be empty"),
+  title: z.string().min(1, "title should not be empty"),
+  content: z.string().min(1, "content should not be empty"),
   tags: z.array(z.string()),
-  coverImgFull: z.string().url({ message: "Invalid url for 3rd party image" }),
+  coverImgFull: z.url({ message: "Invalid url for 3rd party image" }),
   media: z.array(z.string()),
 });
 
 export const doubtSchema = z.object({
-  title: z
-    .string({
-      required_error: "Title is required",
-    })
-    .min(1, "title should not be empty"),
-  content: z
-    .string({
-      required_error: "No content provided!",
-    })
-    .min(1, "content should not be empty"),
-  tags: z.array(z.string({ required_error: "Tag needs description" })),
+  title: z.string().min(1, "title should not be empty"),
+  content: z.string().min(1, "content should not be empty"),
+  tags: z.array(z.string("Tag needs description")),
 });
 
 export const userSchema = z.object({
-  name: z
-    .string({ required_error: "Name needs to be provided" })
-    .min(1, "name should not be empty"),
-  email: z
-    .string({ required_error: "Email is required" })
-    .email({ message: "Invalid email" }),
+  name: z.string().min(1, "name should not be empty"),
+  email: z.email({ message: "Invalid email" }),
   image: z.string().optional(),
 });
 

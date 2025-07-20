@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Toaster } from "react-hot-toast";
 import NextAuthProvider from "../components/auth/GlobalAuth";
 import { ThemeProvider, useTheme } from "@/context/themeContext";

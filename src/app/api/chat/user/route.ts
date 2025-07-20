@@ -22,6 +22,6 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(user);
 }
 
-export async function PUT(req: NextRequest) {
+export async function PUT() {
   return NextResponse.error();
 }

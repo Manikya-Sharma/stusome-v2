@@ -1,3 +1,4 @@
+import { DoubtReply } from "@/types/doubt";
 import ShowMarkdown from "../ShowMarkdown";
 import ShowProfileImage from "../ShowProfileImage";
 import { useGetAccount } from "../queries/accounts";
@@ -28,7 +29,7 @@ export default function Answer({ authorEmail, content, replies }: Props) {
         </div>
         <div className="text-gray-700">
           {replies.map((reply) => (
-            <Reply reply={reply} />
+            <Reply key={reply.id} reply={reply} />
           ))}
         </div>
       </div>

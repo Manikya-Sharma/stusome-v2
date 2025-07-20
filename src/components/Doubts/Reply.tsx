@@ -1,3 +1,4 @@
+import { DoubtReply } from "@/types/doubt";
 import { useGetAccount } from "../queries/accounts";
 import ShowMarkdown from "../ShowMarkdown";
 import ShowProfileImage from "../ShowProfileImage";

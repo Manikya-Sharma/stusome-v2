@@ -33,8 +33,8 @@ export async function POST(req: Request) {
     await db.set(`user:${from}`, JSON.stringify(fromAccount));
     toAccount.chats.push(from);
     await db.set(`user:${to}`, JSON.stringify(toAccount));
-  } else if (how == "block") {
-  }
+  } /* else if (how == "block") {
+  } */
 
   return NextResponse.json("ok");
 }

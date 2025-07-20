@@ -1,6 +1,4 @@
 "use client";
-import { Reply } from "@/types/post";
-import { useEffect, useState } from "react";
 import ShowMarkdown from "../ShowMarkdown";
 import ShowProfileImage from "../ShowProfileImage";
 import { useGetAccounts } from "../queries/accounts";

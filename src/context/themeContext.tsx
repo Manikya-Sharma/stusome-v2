@@ -1,12 +1,13 @@
 import { createContext, useCallback, useContext, useState } from "react";
+import React from "react";
 
-type ThemeContext = {
+type ThemeContextType = {
   theme: "light" | "dark";
-  setTheme: ({ theme }: { theme: "light" | "dark" }) => void;
+  setTheme: (_: { theme: "light" | "dark" }) => void;
   toggleTheme: () => void;
 };
 
-const ThemeContext = createContext<ThemeContext | undefined>(undefined);
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);

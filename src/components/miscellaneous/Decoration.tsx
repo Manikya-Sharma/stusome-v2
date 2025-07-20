@@ -6,7 +6,7 @@ export default function Decoration() {
   const [currentPosition, setCurrentPosition] = useState<number>(45);
 
   useEffect(() => {
-    const onScroll = (_e: Event) => {
+    const onScroll = () => {
       setCurrentPosition(window.scrollY);
     };
     window.addEventListener("scroll", onScroll);

@@ -41,6 +41,7 @@ import {
 } from "@/components/queries/doubt_replies";
 import { useGetPost, usePutPost } from "@/components/queries/posts";
 import { uniq as _uniq } from "lodash";
+import { DoubtReply } from "@/types/doubt";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -98,7 +99,7 @@ export default function Page({ params }: Params) {
       }
     }
     getData();
-  }, [id, router, status]);
+  }, [id, router, status, post?.media]);
 
   const emails: Array<string> = _uniq(
     [

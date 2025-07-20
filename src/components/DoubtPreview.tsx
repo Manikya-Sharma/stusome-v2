@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "./ui/card";
 import { Badge } from "./ui/badge";
+import { Doubt } from "@/types/doubt";
 
 const DoubtPreview = ({
   doubt,

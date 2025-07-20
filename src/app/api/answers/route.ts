@@ -1,3 +1,4 @@
+import { DoubtAnswer } from "@/types/doubt";
 import { MongoClient } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
 

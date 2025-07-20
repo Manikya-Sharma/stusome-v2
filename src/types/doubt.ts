@@ -1,17 +1,17 @@
-type DoubtReply = {
+export type DoubtReply = {
   id: string;
   author: string;
   content: string;
 };
 
-type DoubtAnswer = {
+export type DoubtAnswer = {
   id: string;
   content: string;
   author: string;
   replies: Array<string>;
 };
 
-type Doubt = {
+export type Doubt = {
   id: string;
   title: string;
   author: string;

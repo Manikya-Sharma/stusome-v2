@@ -1,3 +1,4 @@
+import { DoubtReply } from "@/types/doubt";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 
 export const usePostReply = () => {

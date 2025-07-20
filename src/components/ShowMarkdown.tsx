@@ -46,7 +46,7 @@ export default function ShowMarkdown(props: Props) {
         remarkPlugins={[remarkMath, remarkGfm]}
         rehypePlugins={[rehypeKatex, rehypeHighlight, rehypeRaw]}
         components={{
-          h1({ node, ...props }) {
+          h1({ ...props }) {
             return <h2 id={generateId().toString()} {...props}></h2>;
           },
           h2: "h3",
