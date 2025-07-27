@@ -25,6 +25,7 @@ const nextConfig = {
 
         pathname: "/**",
       },
+      { protocol: "https", hostname: "obwr52bngc.ufs.sh", pathname: "/f/*" },
     ],
   },
 };

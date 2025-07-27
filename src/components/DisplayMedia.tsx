@@ -1,89 +1,80 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useGetAllMultimedia } from "./queries/multimedia";
+import Image from "next/image";
 
 export default function DisplayMedia({
   mediaIds,
 }: {
-  mediaIds: Array<string>;
+  mediaIds: Array<{ key: string; type: string }>;
 }) {
   const [width, setWidth] = useState<number>(0);
   useEffect(() => {
     setWidth(window.innerWidth);
   }, []);
-  const [data, setData] = useState<
-    Array<{
-      id: string;
-      datas: string;
-      media_type: string;
-    }>
-  >([]);
-  useEffect(() => {
-    mediaIds.map((id) => {
-      for (const existing of data) {
-        if (existing.id === id) {
-          return;
-        }
-      }
-      fetch(`/api/multimedia?id=${id}`, {
-        cache: "force-cache",
-      }).then((raw_data) => {
-        raw_data.json().then((datas) => {
-          setData([...data, datas.rows[0]]);
-        });
-      });
-    });
-  }, [mediaIds, data]);
+  const multimediaQuery = useGetAllMultimedia({
+    items: mediaIds,
+  });
+  const data = multimediaQuery.map((res) => res.data);
+
+  const isLoading = multimediaQuery.some((res) => res.isLoading);
   return (
     <div className="relative flex flex-col items-center justify-center gap-2 space-y-2 md:mx-auto md:block md:w-fit">
-      {data.length != 0 &&
-        data.map((row) => {
-          if (row.media_type.match("image/*")) {
-            return (
+      {isLoading
+        ? Array(2)
+            .fill(0)
+            .map((_, idx) => (
               <div
-                key={row.id}
-                className="relative aspect-video"
+                className="relative aspect-video animate-pulse bg-gray-600"
                 style={{ width: width < 768 ? width - 100 : width / 5 }}
-              >
-                <Image
-                  src={`data:${row.media_type};base64,${row.datas}`}
-                  alt=""
-                  fill
-                  className="aspect-square rounded-md"
-                />
-              </div>
-            );
-          } else if (row.media_type.match("video/*")) {
-            return (
-              <div key={row.id}>
-                <video
-                  src={`data:${row.media_type};base64,${row.datas}`}
-                  controls
-                  width={width < 768 ? width - 100 : width / 5}
-                  className="aspect-video rounded-lg"
+                key={idx}
+              />
+            ))
+        : data.map((row) => {
+            if (!row) return null;
+            const { type, url } = row;
+            if (type.match("image/*")) {
+              return (
+                <div
+                  key={url}
+                  className="relative aspect-video"
+                  style={{ width: width < 768 ? width - 100 : width / 5 }}
                 >
-                  Videos not supported
-                </video>
-              </div>
-            );
-          } else if (row.media_type.match("application/pdf")) {
-            return (
-              <div key={row.id}>
-                <object
-                  width={width < 768 ? width - 100 : width / 5}
-                  height={width < 768 ? width - 100 : width / 5}
-                  data={`data:${row.media_type};base64,${row.datas}`}
-                >
+                  <Image
+                    src={url}
+                    alt=""
+                    fill
+                    className="aspect-square rounded-md"
+                  />
+                </div>
+              );
+            } else if (type.match("video/*")) {
+              return (
+                <div key={url}>
+                  <video
+                    src={url}
+                    controls
+                    width={width < 768 ? width - 100 : width / 5}
+                    className="aspect-video rounded-lg"
+                  >
+                    Videos not supported
+                  </video>
+                </div>
+              );
+            } else if (type.match("application/pdf")) {
+              return (
+                <div key={url}>
                   <embed
-                    src={`data:${row.media_type};base64,${row.datas}`}
+                    src={url}
+                    width={width < 768 ? width - 100 : width / 5}
+                    height={width < 768 ? width - 100 : width / 5}
                     type="application/pdf"
                   />
-                </object>
-              </div>
-            );
-          }
-        })}
+                </div>
+              );
+            }
+          })}
     </div>
   );
 }

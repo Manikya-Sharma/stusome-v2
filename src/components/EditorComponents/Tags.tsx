@@ -1,28 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
 import { Plus, X } from "lucide-react";
+import { useRef } from "react";
 import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
 export default function Tags({
   changeTags,
-  init,
+  tags,
 }: {
   changeTags: Function;
-  init: Array<string>;
+  tags: Array<string>;
 }) {
-  const [tags, setTags] = useState<Array<string>>([]);
   const tagRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    setTags(init);
-  }, [init]);
-
-  useEffect(() => {
-    changeTags(tags);
-  }, [tags, changeTags]);
 
   function addTag() {
     if (!tagRef || !tagRef.current || !tagRef.current.value) {
@@ -37,12 +28,12 @@ export default function Tags({
         return;
       }
       tagRef.current.value = "";
-      setTags((tags) => [...tags, value]);
+      changeTags([...tags, value]);
     }
   }
 
   function removeTag(tag: string) {
-    setTags(tags.filter((old_tag) => old_tag !== tag));
+    changeTags(tags.filter((old_tag) => old_tag !== tag));
   }
 
   return (

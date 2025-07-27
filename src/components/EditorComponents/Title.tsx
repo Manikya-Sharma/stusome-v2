@@ -1,19 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { Input } from "../ui/input";
 
 const Title = ({
   changeTitle,
-  init,
+  title,
 }: {
-  changeTitle: Function;
-  init: string;
+  changeTitle: (newTitle: string) => void;
+  title: string;
 }) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.value = init;
-    }
-  }, [init]);
   return (
     <div>
       <Input
@@ -23,6 +18,7 @@ const Title = ({
         onChange={(e) => {
           changeTitle(e.currentTarget.value);
         }}
+        value={title}
         required
       />
     </div>

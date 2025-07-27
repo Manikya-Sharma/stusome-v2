@@ -67,7 +67,7 @@ export const usePutAnswer = ({
       field: "content" | "author" | "replies";
       newAnswer: Partial<DoubtAnswer>;
     }) => {
-      await fetch(`/api/answers?id=${id}&field=${field}`, {
+      await fetch(`/api/answers?id=${id}${field ? `&field=${field}` : ""}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

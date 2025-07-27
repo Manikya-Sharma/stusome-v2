@@ -1,22 +1,18 @@
 "use client";
 
+import { useRef } from "react";
 import TextAreaAutoSize from "react-textarea-autosize";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import ShowMarkdown from "../ShowMarkdown";
-import { useEffect, useRef, useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 export default function Content({
   changeContent,
-  init,
+  content,
 }: {
-  changeContent: Function;
-  init: string;
+  changeContent: (newContent: string) => void;
+  content: string;
 }) {
   let textAreaRef = useRef<HTMLTextAreaElement>(null);
-  let [content, setContent] = useState<string>("");
-  useEffect(() => {
-    setContent(init);
-  }, [init]);
   return (
     <Tabs defaultValue="input" className="mx-auto max-w-[80%] md:mx-24">
       <TabsList className="grid w-full max-w-[400px] grid-cols-2">
@@ -31,7 +27,6 @@ export default function Content({
           ref={textAreaRef}
           value={content ?? ""}
           onChange={() => {
-            textAreaRef.current && setContent(textAreaRef.current.value);
             textAreaRef.current && changeContent(textAreaRef.current.value);
           }}
         />

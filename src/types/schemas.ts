@@ -5,7 +5,12 @@ export const postSchema = z.object({
   content: z.string().min(1, "content should not be empty"),
   tags: z.array(z.string()),
   coverImgFull: z.url({ message: "Invalid url for 3rd party image" }),
-  media: z.array(z.string()),
+  media: z.array(
+    z.object({
+      key: z.string(),
+      type: z.string(),
+    }),
+  ),
 });
 
 export const doubtSchema = z.object({

@@ -67,7 +67,7 @@ export const usePutDoubt = ({
       field: "answers" | "title" | "author" | "content" | "tags";
       newDoubt: Partial<Doubt>;
     }) => {
-      await fetch(`/api/doubts?id=${id}&field=${field}`, {
+      await fetch(`/api/doubts?id=${id}${field ? `&field=${field}` : ""}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

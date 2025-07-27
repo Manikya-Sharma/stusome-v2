@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Post } from "@/types/post";
 import { postSchema } from "@/types/schemas";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { notFound, useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
@@ -30,6 +31,7 @@ const App = ({ params }: Params) => {
   const { id } = use(params);
   const { data: session } = useSession();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [formState, setFormState] = useState<formType>({
     content: "",
@@ -44,12 +46,14 @@ const App = ({ params }: Params) => {
     onError: () => toast.error("Could not update, please try again later"),
     onSuccess: () => {
       toast.success("Operation executed successfully");
+      queryClient.invalidateQueries({ queryKey: ["getPost", id] });
       router.push(`/post/${id}`);
     },
   });
   const { mutate: deletePost, isPending: isDeletingPost } = useDeletePost({
     onSuccess: () => {
       toast.success("Post deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["getPost", id] });
       router.replace("/dashboard");
     },
     onError: () => toast.error("Could not delete post, please try again later"),
@@ -60,24 +64,23 @@ const App = ({ params }: Params) => {
     if (isError) {
       return notFound();
     }
-    if (!postData) return;
-    setFormState(postData);
+    setFormState(postData as Post);
   }, [postData, isLoading, isError, setFormState]);
 
   function changeContent(newContent: string) {
-    formState.content = newContent;
+    setFormState({ ...formState, content: newContent });
   }
   function changeTitle(newTitle: string) {
-    formState.title = newTitle;
+    setFormState({ ...formState, title: newTitle });
   }
   function changeCoverImg(newImage: string) {
-    formState.coverImgFull = newImage;
+    setFormState({ ...formState, coverImgFull: newImage });
   }
   function changeTags(newTags: Array<string>) {
-    formState.tags = newTags;
+    setFormState({ ...formState, tags: newTags });
   }
-  function changeMedia(newMedia: string) {
-    formState.media.push(newMedia);
+  function changeMedia(newMedia: Array<{ key: string; type: string }>) {
+    setFormState({ ...formState, media: [...formState.media, ...newMedia] });
   }
 
   function validate() {

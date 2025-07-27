@@ -8,10 +8,10 @@ import { postSchema } from "@/types/schemas";
 import CoverImg from "./EditorComponents/CoverImg";
 
 interface Props {
-  changeContent: Function;
-  changeTitle: Function;
-  changeCoverImg: Function;
-  changeTags: Function;
+  changeContent: (newContent: string) => void;
+  changeTitle: (newTitle: string) => void;
+  changeCoverImg: (newImage: string) => void;
+  changeTags: (newTags: Array<string>) => void;
   state: z.infer<typeof postSchema>;
 }
 
@@ -24,16 +24,16 @@ const Editor = ({
 }: Props) => {
   return (
     <div>
-      <Title changeTitle={changeTitle} init={state.title} />
+      <Title changeTitle={changeTitle} title={state.title} />
       <div className="mt-10">
-        <Content changeContent={changeContent} init={state.content} />
+        <Content changeContent={changeContent} content={state.content} />
       </div>
       <div className="mt-10">
-        <Tags changeTags={changeTags} init={state.tags ?? []} />
+        <Tags changeTags={changeTags} tags={state.tags ?? []} />
       </div>
       <div className="mt-10">
         <CoverImg
-          init={state.coverImgFull ?? ""}
+          coverImage={state.coverImgFull ?? ""}
           setCoverImage={changeCoverImg}
         />
       </div>

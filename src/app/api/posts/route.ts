@@ -1,6 +1,7 @@
 import { Post } from "@/types/post";
 import { MongoClient } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
+import { omit } from "lodash";
 
 export async function POST(req: Request) {
   const client = new MongoClient(process.env.MONGODB_URI!);
@@ -64,7 +65,7 @@ export async function PUT(req: NextRequest) {
         { $set: { [field]: new_post[field] } },
       );
     } else {
-      await collection.updateOne({ id }, { $set: new_post });
+      await collection.updateOne({ id }, { $set: omit(new_post, "_id") });
     }
 
     await client.close();

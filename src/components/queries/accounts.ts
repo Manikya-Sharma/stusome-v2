@@ -67,13 +67,16 @@ export const usePutAccount = ({
       field: "name" | "image" | "image_third_party" | "posts" | "doubts";
       newAccount: Partial<Account>;
     }) => {
-      await fetch(`/api/accounts?email=${email}&field=${field}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+      await fetch(
+        `/api/accounts?email=${email}${field ? `&field=${field}` : ""}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newAccount),
         },
-        body: JSON.stringify(newAccount),
-      });
+      );
     },
     onSuccess,
     onError,

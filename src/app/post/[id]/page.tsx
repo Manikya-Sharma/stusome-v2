@@ -48,11 +48,10 @@ type Params = {
 
 export default function Page({ params }: Params) {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
 
   // fetching data
   const { id } = use(params);
-  const [media, setMedia] = useState<Array<string>>([]);
   const [headings, setHeadings] = useState<string[]>([]);
 
   const { data: post, isLoading: isLoadingPost } = useGetPost({ id });
@@ -86,33 +85,6 @@ export default function Page({ params }: Params) {
   let { data: author, isLoading: isLoadingAuthor } = useGetAccount({
     email: post?.author,
   });
-
-  useEffect(() => {
-    if (status === "loading") return;
-    async function getData() {
-      try {
-        // get media
-        const mediaIds = post?.media;
-        const mediaRequests = mediaIds?.map((request) => {
-          return fetch(`/api/multimedia?id=${request}`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
-        });
-
-        const rawMedia = await Promise.all(mediaRequests ?? []);
-        const parsedMedia = (await Promise.all(
-          rawMedia.map((ans) => ans.json()),
-        )) as Array<string>;
-        setMedia(parsedMedia);
-      } catch (e) {
-        console.log(`Error: ${e}`);
-      }
-    }
-    getData();
-  }, [id, router, status, post?.media]);
 
   // finding headings from data
   useEffect(() => {
@@ -346,12 +318,8 @@ export default function Page({ params }: Params) {
               })}
             </div>
             <div>
-              {post?.media.length != 0 && <h2 className="text-2xl">Media</h2>}
-              {post?.media.length === 0 ? (
-                ""
-              ) : (
-                <DisplayMedia mediaIds={post?.media ?? []} />
-              )}
+              {post?.media.length !== 0 && <h2 className="text-2xl">Media</h2>}
+              <DisplayMedia mediaIds={post?.media ?? []} />
             </div>
           </div>
         </div>

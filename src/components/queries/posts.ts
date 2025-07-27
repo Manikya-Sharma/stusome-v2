@@ -74,7 +74,7 @@ export const usePutPost = ({
         | "published";
       newPost: Partial<Post>;
     }) => {
-      await fetch(`/api/posts?id=${id}&field=${field}`, {
+      await fetch(`/api/posts?id=${id}${field ? `&field=${field}` : ""}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

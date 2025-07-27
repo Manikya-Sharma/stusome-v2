@@ -67,13 +67,16 @@ export const usePutDiscussion = ({
       field: "content" | "author" | "replies";
       newDiscussion: Partial<Discussion>;
     }) => {
-      await fetch(`/api/discussions?id=${id}&field=${field}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+      await fetch(
+        `/api/discussions?id=${id}${field ? `&field=${field}` : ""}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newDiscussion),
         },
-        body: JSON.stringify(newDiscussion),
-      });
+      );
     },
     onSuccess,
     onError,
