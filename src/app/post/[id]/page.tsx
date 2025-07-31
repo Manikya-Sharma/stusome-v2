@@ -4,7 +4,7 @@ import ShowMarkdown from "@/components/ShowMarkdown";
 import Image from "next/image";
 
 import { Cross as Hamburger } from "hamburger-react";
-import { use, useEffect, useState } from "react";
+import { use, useMemo, useState } from "react";
 
 import { v4 as uuid } from "uuid";
 
@@ -23,12 +23,10 @@ import {
 } from "@/components/ui/tooltip";
 import { getChatId } from "@/lib/utils";
 import { Discussion, Reply } from "@/types/post";
-import { ChatAccount } from "@/types/user";
 import { MessageCircle, Pen } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-
 import { useGetAccount } from "@/components/queries/accounts";
 import {
   useGetDiscussions,
@@ -39,6 +37,7 @@ import {
   useGetReplies,
   usePostReply,
 } from "@/components/queries/doubt_replies";
+import { usePostChatRequest, useGetChatUser } from "@/components/queries/chats";
 import { useGetPost, usePutPost } from "@/components/queries/posts";
 import { DoubtReply } from "@/types/doubt";
 
@@ -52,12 +51,19 @@ export default function Page({ params }: Params) {
 
   // fetching data
   const { id } = use(params);
-  const [headings, setHeadings] = useState<string[]>([]);
 
   const { data: post, isLoading: isLoadingPost } = useGetPost({ id });
   const { mutate: updatePost, isPending: isUpdatingPost } = usePutPost({
     onError: () => toast.error("Could not update the relevant post"),
   });
+  const { mutate: sendChatRequest, isPending: isSendingChatRequest } =
+    usePostChatRequest();
+
+  const { data: userChatAccount, isLoading: isLoadingUserChatAccount } =
+    useGetChatUser({ email: session?.user?.email });
+  const { data: authorChatAccount, isLoading: isLoadingAuthorChatAccount } =
+    useGetChatUser({ email: post?.author });
+
   const discussionIds = post?.discussions;
 
   const discussionsQuery = useGetDiscussions({ ids: discussionIds ?? [] });
@@ -87,16 +93,15 @@ export default function Page({ params }: Params) {
   });
 
   // finding headings from data
-  useEffect(() => {
-    const arr = post?.content
-      .replaceAll(/```(.|\n)+```/gm, "")
-      .split("\n")
-      .filter((line) => line.startsWith("# "))
-      .map((line) => line.replace(/#{1}/, "").trim());
-    if (arr != null) {
-      setHeadings(Array.from(arr));
-    }
-  }, [post]);
+  const headings = useMemo(
+    () =>
+      post?.content
+        .replaceAll(/```(.|\n)+```/gm, "")
+        .split("\n")
+        .filter((line) => line.startsWith("# "))
+        .map((line) => line.replace(/#{1}/, "").trim()),
+    [post?.content],
+  );
 
   async function postNewDiscussion(content: string | null) {
     if (!session || !session.user || !session.user.email || !post) return;
@@ -159,50 +164,21 @@ export default function Page({ params }: Params) {
     if (!session || !session.user || !session.user.email || !post) {
       return;
     }
-    const rawAccount = await fetch(
-      `/api/chat/user?email=${session.user.email}`,
-    );
-    const rawAccount2 = await fetch(`/api/chat/user?email=${post.author}`);
-    if (!rawAccount.ok) {
-      toast.error("You have not opted in for chats yet!");
-      return;
-    }
-    if (!rawAccount2.ok) {
-      toast.error("The post author does not accept chats");
-      return;
-    }
 
-    const sender_account = (await rawAccount.json()) as ChatAccount;
-    const receiver_account = (await rawAccount2.json()) as ChatAccount;
+    const sender_account = userChatAccount;
+    const receiver_account = authorChatAccount;
 
     if (sender_account)
       if (
-        sender_account.chats.includes(receiver_account.email) &&
-        receiver_account.chats.includes(sender_account.email)
+        sender_account?.chats.includes(receiver_account?.email ?? "") &&
+        receiver_account?.chats.includes(sender_account?.email ?? "")
       ) {
         // if user is already a friend
         router.push(
           `/mychat/${getChatId(sender_account.email, receiver_account.email)}`,
         );
       } else {
-        // send a request
-        try {
-          await fetch("/api/chat/request", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              from: session.user.email,
-              to: post.author,
-            }),
-          });
-          toast.success(
-            "Sent a chat request, you will be able to chat once the author approves",
-          );
-        } catch (e) {
-          toast.error("Could not begin your chat with author");
-        }
+        sendChatRequest({ from: session.user.email, to: post.author });
       }
   }
   // menu for small screens
@@ -237,7 +213,10 @@ export default function Page({ params }: Params) {
                       isCreatingDiscussion ||
                       isUpdatingDiscussion ||
                       isCreatingReply ||
-                      isUpdatingPost
+                      isUpdatingPost ||
+                      isLoadingAuthorChatAccount ||
+                      isLoadingUserChatAccount ||
+                      isSendingChatRequest
                     }
                   >
                     <Pen />
@@ -259,10 +238,9 @@ export default function Page({ params }: Params) {
                       handleChat();
                     }}
                     disabled={
-                      isCreatingDiscussion ||
-                      isUpdatingDiscussion ||
-                      isCreatingReply ||
-                      isUpdatingPost
+                      isLoadingAuthorChatAccount ||
+                      isLoadingUserChatAccount ||
+                      isSendingChatRequest
                     }
                   >
                     <MessageCircle />
@@ -295,7 +273,7 @@ export default function Page({ params }: Params) {
         )}
         <div className="relative">
           {/* Headings */}
-          <Headings headings={headings} openMenu={openMenu} />
+          <Headings headings={headings ?? []} openMenu={openMenu} />
 
           <div className="sm:inline-flex md:max-w-[75vw]">
             <div className="flex-[3]">

@@ -9,11 +9,12 @@ import {
   TooltipTrigger,
 } from "./ui/tooltip";
 import { useSession } from "next-auth/react";
+import { usePostChatRequestResponse } from "./queries/chats";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ChatRequest({
   sent,
   account,
-  setState,
 }: {
   sent?: boolean;
   account: {
@@ -21,87 +22,48 @@ export default function ChatRequest({
     from?: string;
     to?: string;
   };
-  setState?: Function;
 }) {
   const { data: session } = useSession();
+  const queryClient = useQueryClient();
+  const { mutate: respondToRequest, isPending: isResponding } =
+    usePostChatRequestResponse({
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: ["getChatRequest", account.from],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["getChatRequest", account.to],
+        });
+      },
+    });
 
   async function acceptRequest() {
-    if (!session?.user?.email) {
+    if (!session?.user?.email || !account.from) {
       return;
     }
-    await fetch(`/api/chat/request/respond`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: account.from,
-        to: session?.user?.email,
-        how: "accept",
-      }),
+    respondToRequest({
+      from: account.from,
+      to: session.user.email,
+      how: "accept",
     });
-    if (!setState) return;
-    setState(
-      (
-        prev: Array<{ name: string; from: string }>,
-      ): Array<{ name: string; from: string }> => {
-        return prev.filter(
-          (elem) => elem.name != account.from && elem.from != account.from,
-        );
-      },
-    );
   }
 
   async function removeReceivedRequest() {
-    if (!session?.user?.email) return;
-    await fetch("/api/chat/request/respond", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: account.from,
-        to: session.user.email,
-        how: "reject",
-      }),
+    if (!account.from || !session?.user?.email) return;
+    respondToRequest({
+      from: account.from,
+      to: session.user.email,
+      how: "reject",
     });
-    if (setState) {
-      setState(
-        (
-          prev: Array<{ name: string; from: string }>,
-        ): Array<{ name: string; from: string }> => {
-          return prev.filter(
-            (elem) => elem.name != account.from && elem.from != account.from,
-          );
-        },
-      );
-    }
   }
 
   async function removeSentRequest() {
-    if (!session?.user?.email || !sent) return;
-    await fetch("/api/chat/request/respond", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: session.user.email,
-        to: account.to,
-        how: "reject",
-      }),
+    if (!account.to || !session?.user?.email || !sent) return;
+    respondToRequest({
+      from: session.user.email,
+      to: account.to,
+      how: "reject",
     });
-    if (setState) {
-      setState(
-        (
-          prev: Array<{ name: string; to: string }>,
-        ): Array<{ name: string; to: string }> => {
-          return prev.filter(
-            (elem) => elem.name != account.to && elem.to != account.to,
-          );
-        },
-      );
-    }
   }
 
   return (
@@ -117,6 +79,7 @@ export default function ChatRequest({
                     variant="ghost"
                     className="px-2"
                     onClick={removeSentRequest}
+                    disabled={isResponding}
                   >
                     <X className="text-pink-500" />
                   </Button>
@@ -136,6 +99,7 @@ export default function ChatRequest({
                     onClick={() => {
                       acceptRequest();
                     }}
+                    disabled={isResponding}
                   >
                     <Check className="text-emerald-400" />
                   </Button>
@@ -148,6 +112,7 @@ export default function ChatRequest({
                     variant="ghost"
                     className="px-2"
                     onClick={removeReceivedRequest}
+                    disabled={isResponding}
                   >
                     <X className="text-pink-500" />
                   </Button>

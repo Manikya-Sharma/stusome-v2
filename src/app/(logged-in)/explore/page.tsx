@@ -7,7 +7,6 @@ import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post } from "@/types/post";
-import { uniq as _uniq } from "lodash";
 import { useGetAllDoubts } from "@/components/queries/doubts";
 import { useGetAllPosts } from "@/components/queries/posts";
 import { Doubt } from "@/types/doubt";

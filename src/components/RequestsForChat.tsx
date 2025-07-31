@@ -3,70 +3,38 @@
 import ChatRequest from "@/components/ChatRequest";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSession } from "next-auth/react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useMemo } from "react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { Skeleton } from "./ui/skeleton";
 import toast from "react-hot-toast";
+import { useGetChatRequest, usePostChatRequest } from "./queries/chats";
 
 const RequestsForChat = () => {
   const { data: session } = useSession();
-  const [received, setReceived] = useState<
-    Array<{
-      name: string;
-      from: string;
-    }>
-  >([]);
-  const [sent, setSent] = useState<
-    Array<{
-      name: string;
-      to: string;
-    }>
-  >([]);
-  useEffect(() => {
-    async function getRequests() {
-      try {
-        const raw = await fetch(
-          `/api/chat/request?email=${session?.user?.email}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        );
-        const all_requests = (await raw.json()) as Array<string>;
-        all_requests.map((request) => {
-          const [where, by] = request.split(":");
-          if (where == "to") {
-            setSent((prev) => [
-              ...prev,
-              {
-                name: by,
-                to: by,
-              },
-            ]);
-          } else {
-            setReceived((prev) => [
-              ...prev,
-              {
-                name: by,
-                from: by,
-              },
-            ]);
-          }
-        });
-      } catch (e) {
-        console.log(`${e}`);
-      }
-    }
-    getRequests();
-  }, [session?.user?.email]);
+  const { data: all_requests, isLoading: isLoadingRequests } =
+    useGetChatRequest({ email: session?.user?.email });
+  const { mutate: sendChatRequest, isPending: isSendingChatRequest } =
+    usePostChatRequest();
 
-  // remove duplicates
-  useEffect(() => {
-    setReceived(received.filter((item, pos) => received.indexOf(item) == pos));
-    setSent(sent.filter((item, pos) => sent.indexOf(item) == pos));
-  }, [received, sent]);
+  const parsed_requests = useMemo(
+    () => all_requests?.map((req) => req.split(":")),
+    [all_requests],
+  );
+  const sent = useMemo(
+    () =>
+      parsed_requests
+        ?.filter((req) => req[0] === "to")
+        .map((req) => ({ name: req[1], to: req[1] })),
+    [parsed_requests],
+  );
+  const received = useMemo(
+    () =>
+      parsed_requests
+        ?.filter((req) => req[0] !== "to")
+        .map((req) => ({ name: req[1], from: req[1] })),
+    [parsed_requests],
+  );
 
   const reqRef = useRef<HTMLInputElement | null>(null);
   const sendRequest = async () => {
@@ -82,28 +50,11 @@ const RequestsForChat = () => {
       toast.error("You cannot chat with yourself");
       return;
     }
-    // send request
-    try {
-      await fetch("/api/chat/request", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: session.user.email,
-          to: email,
-        }),
-      });
-      // update state
-      setSent((prev) => [...prev, { to: email, name: email }]);
-      reqRef.current.value = "";
-    } catch (e) {
-      toast.error("The user doesn't exist");
-    }
+    sendChatRequest({ from: session.user.email, to: email });
   };
 
   return (
-    <div>
+    <>
       <div className="mx-auto flex max-w-[80%] items-center justify-center gap-3">
         <Input
           ref={reqRef}
@@ -114,57 +65,67 @@ const RequestsForChat = () => {
               sendRequest();
             }
           }}
+          disabled={isSendingChatRequest}
         />
-        <Button className="text-lg" onClick={sendRequest}>
+        <Button
+          className="text-lg"
+          onClick={sendRequest}
+          disabled={isSendingChatRequest}
+        >
           Send Request
         </Button>
       </div>
       <Tabs defaultValue="received" className="mx-auto max-w-[80%]">
         <TabsList className="mx-auto grid w-full max-w-[400px] grid-cols-2">
           <TabsTrigger value="received">
-            Requests Received ({received.length})
+            Requests Received ({received?.length ?? 0})
           </TabsTrigger>
           <TabsTrigger value="sent">
-            Requests Pending ({sent.length})
+            Requests Pending ({sent?.length ?? 0})
           </TabsTrigger>
         </TabsList>
         <TabsContent value="received">
-          {received.length == 0 ? (
+          {isLoadingRequests ? (
+            Array(4)
+              .fill(0)
+              .map((_, index) => (
+                <Skeleton
+                  className="mx-auto my-2 max-w-prose rounded-lg px-3 py-4"
+                  key={index}
+                />
+              ))
+          ) : received?.length == 0 ? (
             <div className="text-center text-muted-foreground">
               No requests received
             </div>
           ) : (
-            received.map((rcv) => {
-              return (
-                <ChatRequest
-                  key={rcv.from}
-                  account={rcv}
-                  setState={setReceived}
-                />
-              );
+            received?.map((rcv) => {
+              return <ChatRequest key={rcv.from} account={rcv} />;
             })
           )}
         </TabsContent>
         <TabsContent value="sent">
-          {sent.length == 0 ? (
+          {isLoadingRequests ? (
+            Array(4)
+              .fill(0)
+              .map((_, index) => (
+                <Skeleton
+                  className="mx-auto my-2 max-w-prose rounded-lg px-3 py-4"
+                  key={index}
+                />
+              ))
+          ) : sent?.length == 0 ? (
             <div className="text-center text-muted-foreground">
               No requests sent
             </div>
           ) : (
-            sent.map((snd) => {
-              return (
-                <ChatRequest
-                  key={snd.to}
-                  account={snd}
-                  sent
-                  setState={setSent}
-                />
-              );
+            sent?.map((snd) => {
+              return <ChatRequest key={snd.to} account={snd} sent />;
             })
           )}
         </TabsContent>
       </Tabs>
-    </div>
+    </>
   );
 };
 

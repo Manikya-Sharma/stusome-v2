@@ -11,7 +11,6 @@ export async function POST(req: Request) {
       id: string;
       message: string;
       to: string;
-      read: boolean;
       time: number;
     };
   };
@@ -25,7 +24,6 @@ export async function POST(req: Request) {
     id: message.id,
     message: message.message,
     to: message.to,
-    read: message.read,
     time: message.time,
   });
 
@@ -41,39 +39,7 @@ export async function GET(req: NextRequest) {
 
   const chats = (await db.zrange(id, 0, -1, {
     withScores: true,
-  })) as [{ id: string; message: string; to: string; read: boolean }, number];
+  })) as [{ id: string; message: string; to: string }, number];
 
   return NextResponse.json(chats);
-}
-
-export async function PUT(req: NextRequest) {
-  // only to mark chats as read
-  const { from_email, to_email, message } = (await req.json()) as {
-    from_email: string;
-    to_email: string;
-    message: {
-      id: string;
-      message: string;
-      to: string;
-      read: boolean;
-      time: number;
-    };
-  };
-
-  if (message.read) return NextResponse.json("ok");
-
-  const id = getChatId(from_email, to_email);
-
-  await db.zrem(id, JSON.stringify(message));
-
-  await db.zadd(id, {
-    score: message.time,
-    member: JSON.stringify({ ...message, read: true }),
-  });
-
-  await pusherServer.trigger(getPusherId(id), "read", {
-    id: message.id,
-  });
-
-  return NextResponse.json("ok");
 }
