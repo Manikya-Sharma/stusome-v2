@@ -104,7 +104,10 @@ export default function Page({ params }: Params) {
   );
 
   async function postNewDiscussion(content: string | null) {
-    if (!session || !session.user || !session.user.email || !post) return;
+    if (!session || !session.user || !session.user.email || !post) {
+      toast.error("It seems you are logged out");
+      return;
+    }
     const new_discussion: Discussion = {
       author: session.user.email,
       content: content ?? "",
@@ -130,7 +133,10 @@ export default function Page({ params }: Params) {
   }
 
   async function postNewReply(content: string | null, discussionId?: string) {
-    if (!session || !session.user || !session.user.email) return;
+    if (!session || !session.user || !session.user.email) {
+      toast.error("It seems you are logged out");
+      return;
+    }
     const reply: Reply = {
       author: session.user.email,
       content: content ?? "",
@@ -162,6 +168,7 @@ export default function Page({ params }: Params) {
 
   async function handleChat() {
     if (!session || !session.user || !session.user.email || !post) {
+      toast.error("It seems you are logged out");
       return;
     }
 
@@ -178,6 +185,7 @@ export default function Page({ params }: Params) {
           `/mychat/${getChatId(sender_account.email, receiver_account.email)}`,
         );
       } else {
+        toast.success("Sent chat request to the author");
         sendChatRequest({ from: session.user.email, to: post.author });
       }
   }
@@ -240,7 +248,8 @@ export default function Page({ params }: Params) {
                     disabled={
                       isLoadingAuthorChatAccount ||
                       isLoadingUserChatAccount ||
-                      isSendingChatRequest
+                      isSendingChatRequest ||
+                      !authorChatAccount
                     }
                   >
                     <MessageCircle />

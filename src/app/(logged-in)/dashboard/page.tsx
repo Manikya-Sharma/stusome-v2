@@ -77,7 +77,7 @@ const Page = () => {
       {isLoading && <IndeterminateLoader loading={isLoading} />}
       <div>
         <div className="container mx-auto p-4">
-          {posts.length !== 0 && (
+          {!isLoadingPosts && (
             <section>
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold dark:text-slate-200">
@@ -93,34 +93,33 @@ const Page = () => {
               </div>
 
               <div className="mb-5 mt-3 max-h-[45vh] overflow-y-auto overflow-x-hidden rounded-lg border-2 border-slate-300 px-3 pt-2 dark:border-slate-800 lg:flex lg:max-h-full lg:justify-start lg:overflow-x-auto">
-                {posts &&
-                  posts.map((post) => {
-                    return (
-                      <div
-                        key={post?.id}
-                        className="relative my-5 cursor-pointer overflow-hidden rounded-lg bg-slate-200 p-4 py-5 transition-transform hover:scale-105 dark:bg-slate-800 lg:mx-3 lg:min-w-[20%] lg:max-w-[40%] lg:flex-1"
-                        onClick={() => router.push(`/post/${post?.id}`)}
-                      >
-                        {post?.published == false && (
-                          <Badge
-                            variant={"secondary"}
-                            className="absolute right-5 top-2"
-                          >
-                            Draft
-                          </Badge>
-                        )}
-                        <h3 className="mb-2 text-xl font-semibold">
-                          {post?.title}
-                        </h3>
-                        <p>{post?.content.slice(0, 150)} ...</p>
-                      </div>
-                    );
-                  })}
+                {posts.map((post) => {
+                  return (
+                    <div
+                      key={post?.id}
+                      className="relative my-5 cursor-pointer overflow-hidden rounded-lg bg-slate-200 p-4 py-5 transition-transform hover:scale-105 dark:bg-slate-800 lg:mx-3 lg:min-w-[20%] lg:max-w-[40%] lg:flex-1"
+                      onClick={() => router.push(`/post/${post?.id}`)}
+                    >
+                      {post?.published == false && (
+                        <Badge
+                          variant={"secondary"}
+                          className="absolute right-5 top-2"
+                        >
+                          Draft
+                        </Badge>
+                      )}
+                      <h3 className="mb-2 text-xl font-semibold">
+                        {post?.title}
+                      </h3>
+                      <p>{post?.content.slice(0, 150)} ...</p>
+                    </div>
+                  );
+                })}
               </div>
             </section>
           )}
 
-          {doubts.length !== 0 && (
+          {!isLoadingDoubts && (
             <section>
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold dark:text-slate-200">
@@ -138,21 +137,20 @@ const Page = () => {
               </div>
 
               <div className="mb-5 mt-3 max-h-[45vh] overflow-y-auto overflow-x-hidden rounded-lg border-2 border-slate-300 px-3 pt-2 dark:border-slate-800 lg:flex lg:max-h-full lg:justify-start lg:overflow-x-auto">
-                {doubts &&
-                  doubts.map((doubt) => {
-                    return (
-                      <div
-                        key={doubt?.id}
-                        className="my-5 cursor-pointer overflow-hidden rounded-lg bg-slate-200 p-4 py-5 transition-transform hover:scale-105 dark:bg-slate-800 lg:mx-3 lg:min-w-[20%] lg:max-w-[40%] lg:flex-1"
-                        onClick={() => router.push(`/doubt/${doubt?.id}`)}
-                      >
-                        <h3 className="mb-2 text-xl font-semibold">
-                          {doubt?.title}
-                        </h3>
-                        <p>{doubt?.content.slice(0, 150)} ...</p>
-                      </div>
-                    );
-                  })}
+                {doubts.map((doubt) => {
+                  return (
+                    <div
+                      key={doubt?.id}
+                      className="my-5 cursor-pointer overflow-hidden rounded-lg bg-slate-200 p-4 py-5 transition-transform hover:scale-105 dark:bg-slate-800 lg:mx-3 lg:min-w-[20%] lg:max-w-[40%] lg:flex-1"
+                      onClick={() => router.push(`/doubt/${doubt?.id}`)}
+                    >
+                      <h3 className="mb-2 text-xl font-semibold">
+                        {doubt?.title}
+                      </h3>
+                      <p>{doubt?.content.slice(0, 150)} ...</p>
+                    </div>
+                  );
+                })}
               </div>
             </section>
           )}
