@@ -54,6 +54,9 @@ const App = ({ params }: Params) => {
     onSuccess: () => {
       toast.success("Post deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["getPost", id] });
+      queryClient.invalidateQueries({
+        queryKey: ["getUser", session?.user?.email],
+      });
       router.replace("/dashboard");
     },
     onError: () => toast.error("Could not delete post, please try again later"),
@@ -133,7 +136,7 @@ const App = ({ params }: Params) => {
     if (!session?.user?.email) {
       return;
     }
-    deletePost({ id });
+    deletePost({ id, userEmail: session.user.email });
   }
 
   return (

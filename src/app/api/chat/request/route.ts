@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import type { ChatAccount } from "@/types/user";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -7,13 +8,28 @@ export async function POST(req: Request) {
     to: string;
   };
   if (to === from) {
-    throw new Error("Cannot send request to yourself");
+    return NextResponse.json(
+      { message: "Cannot send request to yourself" },
+      { status: 400 },
+    );
   }
-  if (!(await db.get(`user:${from}`))) {
-    throw new Error(`No such user exists: ${from}`);
+  const fromUser = (await db.get(`user:${from}`)) as ChatAccount;
+  if (!fromUser) {
+    return NextResponse.json(
+      { message: `No such user exists: ${from}` },
+      { status: 404 },
+    );
   }
-  if (!(await db.get(`user:${to}`))) {
-    throw new Error(`No such user exists: ${to}`);
+  const toUser = (await db.get(`user:${to}`)) as ChatAccount;
+  if (!toUser) {
+    return NextResponse.json(
+      { message: `No such user exists: ${to}` },
+      { status: 404 },
+    );
+  }
+
+  if (fromUser.chats.includes(to) && toUser.chats.includes(from)) {
+    return NextResponse.json({ message: "Already friends" }, { status: 400 });
   }
 
   await db.sadd(`req:${from}`, `to:${to}`);

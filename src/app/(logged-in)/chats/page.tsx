@@ -10,6 +10,7 @@ import { ChatAccount } from "@/types/user";
 import { useSession } from "next-auth/react";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import IndeterminateLoader from "@/components/IndeterminateLoader";
 
 const Page = () => {
   const { data: session } = useSession();
@@ -46,24 +47,33 @@ const Page = () => {
       : undefined;
     createChatAccount(chatAccount);
   }
-  return isChatUser ? (
-    <div>
-      {/* TODO: Show requests only when they exist */}
-      <RequestsForChat />
-      <Separator className="mx-auto my-4 max-w-prose" />
-      <RecentChats recentChats={chatAccount?.chats ?? []} />
-    </div>
-  ) : (
-    <div className="flex h-[90vh] w-full flex-col items-center justify-center gap-10 px-10">
-      <h1 className="text-center text-5xl">You have not opted in for chats</h1>
-      <Button
-        className="text-xl"
-        onClick={optIn}
-        disabled={isLoadingChatAccount || isCreatingChatAccount}
-      >
-        Opt in for chats
-      </Button>
-    </div>
+  return (
+    <>
+      <IndeterminateLoader
+        loading={isLoadingChatAccount || isCreatingChatAccount}
+      />
+      {isChatUser ? (
+        <div>
+          {/* TODO: Show requests only when they exist */}
+          <RequestsForChat />
+          <Separator className="mx-auto my-4 max-w-prose" />
+          <RecentChats recentChats={chatAccount?.chats ?? []} />
+        </div>
+      ) : (
+        <div className="flex h-[90vh] w-full flex-col items-center justify-center gap-10 px-10">
+          <h1 className="text-center text-5xl">
+            You have not opted in for chats
+          </h1>
+          <Button
+            className="text-xl"
+            onClick={optIn}
+            disabled={isLoadingChatAccount || isCreatingChatAccount}
+          >
+            Opt in for chats
+          </Button>
+        </div>
+      )}
+    </>
   );
 };
 

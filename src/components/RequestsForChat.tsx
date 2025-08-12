@@ -9,13 +9,22 @@ import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import toast from "react-hot-toast";
 import { useGetChatRequest, usePostChatRequest } from "./queries/chats";
+import { useQueryClient } from "@tanstack/react-query";
 
 const RequestsForChat = () => {
   const { data: session } = useSession();
   const { data: all_requests, isLoading: isLoadingRequests } =
     useGetChatRequest({ email: session?.user?.email });
+  const queryClient = useQueryClient();
   const { mutate: sendChatRequest, isPending: isSendingChatRequest } =
-    usePostChatRequest();
+    usePostChatRequest({
+      onSuccess: () =>
+        queryClient.invalidateQueries({
+          queryKey: ["getChatRequest", session?.user?.email],
+        }),
+      onError: () =>
+        toast.error("Could not send request, are you sure the email is valid?"),
+    });
 
   const parsed_requests = useMemo(
     () => all_requests?.map((req) => req.split(":")),

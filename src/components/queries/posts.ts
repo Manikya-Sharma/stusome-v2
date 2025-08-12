@@ -5,7 +5,7 @@ export const usePostPost = ({
   onSuccess,
   onError,
 }: {
-  onSuccess?: () => void;
+  onSuccess?: (data?: void, variables?: Post) => void;
   onError?: () => void;
 } = {}) => {
   return useMutation({
@@ -95,8 +95,14 @@ export const useDeletePost = ({
   onError?: () => void;
 } = {}) => {
   return useMutation({
-    mutationFn: async ({ id }: { id: string | null | undefined }) => {
-      await fetch(`/api/posts/?id=${id}`, {
+    mutationFn: async ({
+      id,
+      userEmail,
+    }: {
+      id: string | null | undefined;
+      userEmail: string;
+    }) => {
+      await fetch(`/api/posts/?id=${id}&email=${userEmail}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
