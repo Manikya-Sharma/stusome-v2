@@ -2,6 +2,7 @@ import { Post } from "@/types/post";
 import { MongoClient } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
 import { omit } from "lodash";
+import { Account } from "@/types/user";
 
 export async function POST(req: Request) {
   const client = new MongoClient(process.env.MONGODB_URI!);
@@ -79,14 +80,37 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const client = new MongoClient(process.env.MONGODB_URI!);
   const id = req.nextUrl.searchParams.get("id");
-  if (!id) throw new Error("Missing query parameter");
+  const userEmail = req.nextUrl.searchParams.get("email");
+
+  if (!id || !userEmail) throw new Error("Missing query parameter");
 
   try {
     await client.connect();
     const database = client.db("stusome");
-    const collection = database.collection("posts");
+    const postsCollection = database.collection("posts");
+    const usersCollection = database.collection("accounts");
 
-    await collection.deleteOne({ id });
+    const user = (await usersCollection.findOne({
+      email: userEmail,
+    })) as unknown as Account & { _id: object };
+    if (!user) {
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
+    }
+    const posts = user.posts;
+    if (!posts.includes(id)) {
+      return NextResponse.json({ message: "Post not found" }, { status: 400 });
+    }
+
+    const newUser = {
+      ...user,
+      posts: user.posts.filter((postId) => id !== postId),
+    };
+
+    await usersCollection.updateOne(
+      { email: userEmail },
+      { $set: omit(newUser, "_id") },
+    );
+    await postsCollection.deleteOne({ id });
 
     await client.close();
 

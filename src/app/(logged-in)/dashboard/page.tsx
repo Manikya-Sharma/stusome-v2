@@ -7,6 +7,8 @@ import { useGetPosts, usePostPost } from "@/components/queries/posts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Post } from "@/types/post";
+import { useQueryClient } from "@tanstack/react-query";
+import { Info } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -23,10 +25,15 @@ const Page = () => {
   const { data: account, isLoading: isLoadingAccount } = useGetAccount({
     email: session?.user?.email,
   });
+  const queryClient = useQueryClient();
   const { mutate: updateAccount, isPending: isUpdatingAccount } = usePutAccount(
     {
       email: session?.user?.email,
       onError: () => toast.error("Post could not be linked to your account"),
+      onSuccess: () =>
+        queryClient.invalidateQueries({
+          queryKey: ["getAccount", session?.user?.email],
+        }),
     },
   );
 
@@ -43,9 +50,11 @@ const Page = () => {
   const { mutate: createNewPost, isPending: isCreatingNewPost } = usePostPost({
     onError: () =>
       toast.error("Unable to create new post, please try again later"),
-    onSuccess: () => {
+    onSuccess: (_data, createdPost) => {
+      // TODO: Can id be undefined
+      const id = createdPost?.id;
       toast.success("New post created successfully");
-      router.push("/dashboard");
+      router.push(`/post/${id}/edit`);
     },
   });
 
@@ -77,23 +86,28 @@ const Page = () => {
       {isLoading && <IndeterminateLoader loading={isLoading} />}
       <div>
         <div className="container mx-auto p-4">
-          {!isLoadingPosts && (
-            <section>
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold dark:text-slate-200">
-                  Posts
-                </h2>
-                <Button
-                  className="text-lg"
-                  onClick={() => newPost()}
-                  disabled={isCreatingNewPost || isUpdatingAccount}
-                >
-                  Create New Post
-                </Button>
-              </div>
+          <section>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold dark:text-slate-200">
+                Posts
+              </h2>
+              <Button
+                className="text-lg"
+                onClick={() => newPost()}
+                disabled={isCreatingNewPost || isUpdatingAccount}
+              >
+                Create New Post
+              </Button>
+            </div>
 
-              <div className="mb-5 mt-3 max-h-[45vh] overflow-y-auto overflow-x-hidden rounded-lg border-2 border-slate-300 px-3 pt-2 dark:border-slate-800 lg:flex lg:max-h-full lg:justify-start lg:overflow-x-auto">
-                {posts.map((post) => {
+            <div className="mb-5 mt-3 max-h-[45vh] min-h-40 overflow-y-auto overflow-x-hidden rounded-lg border-2 border-slate-300 px-3 pt-2 dark:border-slate-800 lg:flex lg:max-h-full lg:justify-start lg:overflow-x-auto">
+              {posts.length === 0 ? (
+                <div className="mx-auto flex h-full w-fit flex-col justify-center gap-5">
+                  <Info className="mx-auto size-10 text-muted-foreground" />
+                  No posts added yet
+                </div>
+              ) : (
+                posts.map((post) => {
                   return (
                     <div
                       key={post?.id}
@@ -114,30 +128,35 @@ const Page = () => {
                       <p>{post?.content.slice(0, 150)} ...</p>
                     </div>
                   );
-                })}
-              </div>
-            </section>
-          )}
+                })
+              )}
+            </div>
+          </section>
 
-          {!isLoadingDoubts && (
-            <section>
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold dark:text-slate-200">
-                  Doubts
-                </h2>
-                <Button
-                  className="text-lg"
-                  onClick={() => {
-                    router.push("/doubt/new");
-                  }}
-                  disabled={isUpdatingAccount}
-                >
-                  Create New Doubt
-                </Button>
-              </div>
+          <section>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold dark:text-slate-200">
+                Doubts
+              </h2>
+              <Button
+                className="text-lg"
+                onClick={() => {
+                  router.push("/doubt/new");
+                }}
+                disabled={isUpdatingAccount}
+              >
+                Create New Doubt
+              </Button>
+            </div>
 
-              <div className="mb-5 mt-3 max-h-[45vh] overflow-y-auto overflow-x-hidden rounded-lg border-2 border-slate-300 px-3 pt-2 dark:border-slate-800 lg:flex lg:max-h-full lg:justify-start lg:overflow-x-auto">
-                {doubts.map((doubt) => {
+            <div className="mb-5 mt-3 max-h-[45vh] min-h-40 overflow-y-auto overflow-x-hidden rounded-lg border-2 border-slate-300 px-3 pt-2 dark:border-slate-800 lg:flex lg:max-h-full lg:justify-start lg:overflow-x-auto">
+              {doubts.length === 0 ? (
+                <div className="mx-auto flex h-full w-fit flex-col justify-center gap-5">
+                  <Info className="mx-auto size-10 text-muted-foreground" />
+                  No doubts added yet
+                </div>
+              ) : (
+                doubts.map((doubt) => {
                   return (
                     <div
                       key={doubt?.id}
@@ -150,10 +169,10 @@ const Page = () => {
                       <p>{doubt?.content.slice(0, 150)} ...</p>
                     </div>
                   );
-                })}
-              </div>
-            </section>
-          )}
+                })
+              )}
+            </div>
+          </section>
         </div>
       </div>
     </main>

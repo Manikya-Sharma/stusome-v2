@@ -11,6 +11,7 @@ import {
 import { useSession } from "next-auth/react";
 import { usePostChatRequestResponse } from "./queries/chats";
 import { useQueryClient } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 
 export default function ChatRequest({
   sent,
@@ -81,7 +82,13 @@ export default function ChatRequest({
                     onClick={removeSentRequest}
                     disabled={isResponding}
                   >
-                    <X className="text-pink-500" />
+                    <X
+                      className={cn(
+                        isResponding
+                          ? "text-muted-foreground"
+                          : "text-pink-500",
+                      )}
+                    />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Remove</TooltipContent>
@@ -101,7 +108,13 @@ export default function ChatRequest({
                     }}
                     disabled={isResponding}
                   >
-                    <Check className="text-emerald-400" />
+                    <Check
+                      className={cn(
+                        isResponding
+                          ? "text-muted-foreground"
+                          : "text-emerald-400",
+                      )}
+                    />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Accept</TooltipContent>
